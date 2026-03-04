@@ -1,0 +1,108 @@
+name: Reusable workflow sample
+description: workflow to be called
+
+on: 
+    workflow_dispatch:
+    workflow_call:
+        inputs:
+            tag:
+                type: string
+                required: true
+            shardIndex:
+                type: string
+                required: true
+            shardTotal:
+                type: string
+                required: true
+            environment:
+                type: string
+                required: true
+            testURL: 
+                type: string
+                required: false
+            use-cache: 
+                type: boolean
+                default: true
+                description: "set to true to use cache"
+            node-version: 
+                type: string
+                description: "Node.js version to use"
+                default: '20.x'
+        
+        secrets:
+            ADMIN_TOKEN:
+                description: "Token to use"
+                required: true
+
+env:
+    WORK_DIR: ./apitests
+
+jobs:
+    Run-UI-Tests:
+    name: Run playwright tests for ${{ inputs.tag }} - Shard ${{ inputs.shardIndex }}/${{ inputs.shardTotal }}
+
+    runs-on: ubuntu-latest
+
+    container:
+        image: mcr.microsoft.com/playwright:v1.45.2-jammy
+
+    outputs:
+        deps-cache-key: ${{ steps.cache-key.outputs.CACHE_KEY }}
+    
+    defaults:
+        run:
+            working-directory: ${{ env.WORK_DIR }}
+    
+    steps:
+        - name: Checkout repo
+        - uses: actions/checkout@v4
+
+        - 
+          shell: bash
+          run: | 
+            "${{ inputs.tags }}"
+            "${{ secrets.ADMIN_TOKEN }}"
+        - name: Set up Node.js
+          uses: actions/setup-node@v4
+          with:
+            node-version: ${{ inputs.node-version }}
+            cache: npm
+
+        - name: Calculate cache key
+          id: cache-key
+          run: echo "CACHE_KEY=deps-node-modules-${{ hashfiles('**/package-lock.json')}}" >> "$GITHUB_OUTPUT"
+
+
+        - name: Download Node Modules
+          uses: actions/cache@v3
+          id: cache-node-modules
+          with:
+            path: ${{ env.WORK_DIR }}/node_modules
+            key: ${{ steps.cache-key.outputs.CACHE_KEY }}
+
+        - name: Install dependencies
+          run: |
+            ENVIRONMENT="${{ inputs.environment }}" \
+            npx playwright test \
+                --grep "${{ inputs.tag }}"
+                --shard="${{ inputs.shardIndex }}/${{ inputs.shardTotal }}"
+
+        - env:
+            PROD_TOKEN: ${{ env.PROD_TOKEN }}
+            PROD_PASSWORD: ${{ env.PROD_PASSWORD }}
+
+        - name: Upload Artifacts
+          if: always()
+          uses: actions/upload-artifact@v4
+          with:
+            name: Results - ${{ inputs.environment }}-${{ inputs.country }}-${{ inputs.shardIndex }}
+            path: | 
+              ${{ env.WORK_DIR }}/playwright-report/
+              ${{ env.WORK_DIR }}/test-results/
+           
+
+
+    
+
+
+

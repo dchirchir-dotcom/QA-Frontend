@@ -1,6 +1,7 @@
 import { BrowserContext, Page } from "@playwright/test";
+import _config from "../config/configManager";
 
-export class _comnmon {
+export class _common {
     private page: Page;
     readonly context: BrowserContext
     private baseUrl: any;
@@ -12,7 +13,7 @@ export class _comnmon {
     }
 
     async loadSite(){
-        await this.page.goto("https://dev.itibari.io/");
+        await this.page.goto(_config.baseUrl);
         await this.page.waitForLoadState('domcontentloaded');
     }
 }

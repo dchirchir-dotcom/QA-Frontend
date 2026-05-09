@@ -106,28 +106,6 @@ jobs:
               --shard=${{ inputs.shardIndex }}/${{ inputs.shardTotal }}
           fi
 
-      - name: Send Slack failure alert
-        if: steps.playwright.outcome == 'failure'
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-          ENVIRONMENT: ${{ inputs.environment }}
-          TAG: ${{ inputs.tag }}
-        run: |
-          if [ -z "$SLACK_WEBHOOK_URL" ]; then
-            echo "::warning::Skipping Slack alert because SLACK_WEBHOOK_URL is not configured."
-            exit 0
-          fi
-
-          RUN_URL="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
-          TEST_SCOPE="${TAG:-all tests}"
-          curl -X POST -H 'Content-type: application/json' \
-            --data "{\"text\":\"Playwright UI tests failed for ${ENVIRONMENT} (${TEST_SCOPE}). View run: ${RUN_URL}\"}" \
-            "$SLACK_WEBHOOK_URL"
-
-      - name: Fail workflow if Playwright failed
-        if: steps.playwright.outcome == 'failure'
-        run: exit 1
-
       - name: Upload Artifacts
         if: always()
         uses: actions/upload-artifact@v4
@@ -136,3 +114,34 @@ jobs:
           path: |
             ${{ env.WORK_DIR }}/playwright-report/
             ${{ env.WORK_DIR }}/test-results/
+
+      - name: Send Slack run summary
+        if: always()
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          ENVIRONMENT: ${{ inputs.environment }}
+          TAG: ${{ inputs.tag }}
+          PLAYWRIGHT_OUTCOME: ${{ steps.playwright.outcome }}
+        run: |
+          if [ -z "$SLACK_WEBHOOK_URL" ]; then
+            echo "::warning::Skipping Slack alert because SLACK_WEBHOOK_URL is not configured."
+            exit 0
+          fi
+
+          RUN_URL="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+          TEST_SCOPE="${TAG:-all tests}"
+          if [ "$PLAYWRIGHT_OUTCOME" = "success" ]; then
+            STATUS="passed"
+          elif [ "$PLAYWRIGHT_OUTCOME" = "failure" ]; then
+            STATUS="failed"
+          else
+            STATUS="finished with status ${PLAYWRIGHT_OUTCOME:-unknown}"
+          fi
+
+          curl --fail-with-body -X POST -H 'Content-type: application/json' \
+            --data "{\"text\":\"Playwright UI tests ${STATUS} for ${ENVIRONMENT} (${TEST_SCOPE}). View run: ${RUN_URL}\"}" \
+            "$SLACK_WEBHOOK_URL"
+
+      - name: Fail workflow if Playwright failed
+        if: steps.playwright.outcome == 'failure'
+        run: exit 1

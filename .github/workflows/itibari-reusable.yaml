@@ -79,7 +79,19 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Check Slack alert setup
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: |
+          if [ -n "$SLACK_WEBHOOK_URL" ]; then
+            echo "Slack webhook is configured."
+          else
+            echo "::warning::SLACK_WEBHOOK_URL is not configured, so Slack alerts will not be sent."
+          fi
+
       - name: Run Playwright tests
+        id: playwright
+        continue-on-error: true
         env:
           ADMIN_TOKEN: ${{ secrets.ADMIN_TOKEN }}
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
@@ -93,6 +105,28 @@ jobs:
             npx playwright test \
               --shard=${{ inputs.shardIndex }}/${{ inputs.shardTotal }}
           fi
+
+      - name: Send Slack failure alert
+        if: steps.playwright.outcome == 'failure'
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          ENVIRONMENT: ${{ inputs.environment }}
+          TAG: ${{ inputs.tag }}
+        run: |
+          if [ -z "$SLACK_WEBHOOK_URL" ]; then
+            echo "::warning::Skipping Slack alert because SLACK_WEBHOOK_URL is not configured."
+            exit 0
+          fi
+
+          RUN_URL="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+          TEST_SCOPE="${TAG:-all tests}"
+          curl -X POST -H 'Content-type: application/json' \
+            --data "{\"text\":\"Playwright UI tests failed for ${ENVIRONMENT} (${TEST_SCOPE}). View run: ${RUN_URL}\"}" \
+            "$SLACK_WEBHOOK_URL"
+
+      - name: Fail workflow if Playwright failed
+        if: steps.playwright.outcome == 'failure'
+        run: exit 1
 
       - name: Upload Artifacts
         if: always()

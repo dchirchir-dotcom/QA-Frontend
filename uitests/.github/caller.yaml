@@ -1,41 +1,29 @@
 name: Workflow caller
 
-description: This will run tests using re-usable Workflow
-
-on: 
-    push:
-        branches:
-            - main
-    pull_request:
-        branches:
-            - main
-    workflow_dispatch:
-        inputs:
-            environment:
-                description: "Target Env"
-                type: choice
-                options: [PRODUCTION, DEV]
-                default: PRODUCTION
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Target Env
+        type: choice
+        options: [PRODUCTION, DEV]
+        default: PRODUCTION
 
 jobs:
-    run-playwright-tests:
-        uses: ./.github/workflows/itibari-reusable.yaml
-        strategy:
-            fail-fast: false
-            matrix:
-                shardIndex: [1, 2, 3, 4]
-                include:
-                    tag: "@Stock"
-                    shardTotal: 4
-        with:
-            tag: ${{ matrix.tag }}
-            environment: ${{ inputs.environment }}
-            shardIndex: ${{ matrix.shardIndex }}
-            shardTotal: ${{ matrix.shardTotal }}
-            node-version: 20.x
-            use-cache: true
+  run-playwright-tests:
+    uses: ./.github/workflows/itibari-reusable.yaml
 
-        secrets:
-            TOKEN: ${{ secrets.PROD_TOKEN }}
+    with:
+      tag: "@Stock"
+      environment: ${{ inputs.environment || 'PRODUCTION' }}
+      shardIndex: 1
+      shardTotal: 4
+      node-version: 20.x
+      use-cache: true
 
-
+    secrets:
+      TOKEN: ${{ secrets.PROD_TOKEN }}

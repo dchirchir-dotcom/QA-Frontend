@@ -10,7 +10,6 @@
     "test:auth": "playwright test --project=setup",
     "test:login": "playwright test tests/login.spec.ts --project=chromium-auth",
     "test:user-management": "playwright test tests/userManagement.spec.ts --project=chromium-auth --workers=1",
-    "test:user-management:refresh-auth": "playwright test tests/userManagement.spec.ts --project=chromium --workers=1",
     "test:user-management:all": "playwright test tests/userManagement.spec.ts --project=chromium-auth --workers=1"
   },
   "keywords": [],

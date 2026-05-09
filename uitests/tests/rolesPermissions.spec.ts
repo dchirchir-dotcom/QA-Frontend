@@ -68,12 +68,22 @@ test.describe('Roles & Permission Groups Module', () => {
     test('Add permissions to a role via the wizard',
       async ({ rolesAndPermissionsPage }) => {
         const name = uniqueName('QA_Permissions');
+        const permissionGroup = uniqueName('QA_AssignGroup');
+
+        await rolesAndPermissionsPage.goToPermissionGroupsTab();
+        await rolesAndPermissionsPage.addPermissionGroup(permissionGroup);
+        await rolesAndPermissionsPage.addPermissionsToGroup(
+          new RegExp(permissionGroup, 'i'),
+          ['Create, Edit, View'],
+        );
+
+        await rolesAndPermissionsPage.goToRolesTab();
         await rolesAndPermissionsPage.addRole(name);
         await rolesAndPermissionsPage.expectRoleInTable(new RegExp(name, 'i'));
 
         await rolesAndPermissionsPage.addPermissionsToRole(
           new RegExp(name, 'i'),
-          /warehouse/i,
+          new RegExp(permissionGroup, 'i'),
           ['Create', 'Edit', 'View'],
         );
 
@@ -85,11 +95,21 @@ test.describe('Roles & Permission Groups Module', () => {
     test('Add permissions to an existing role with multiple permission types',
       async ({ rolesAndPermissionsPage }) => {
         const name = uniqueName('QA_MultiPerm');
+        const permissionGroup = uniqueName('QA_MultiGroup');
+
+        await rolesAndPermissionsPage.goToPermissionGroupsTab();
+        await rolesAndPermissionsPage.addPermissionGroup(permissionGroup);
+        await rolesAndPermissionsPage.addPermissionsToGroup(
+          new RegExp(permissionGroup, 'i'),
+          ['Create, Edit, View, Delete, Manage'],
+        );
+
+        await rolesAndPermissionsPage.goToRolesTab();
         await rolesAndPermissionsPage.addRole(name);
 
         await rolesAndPermissionsPage.addPermissionsToRole(
           new RegExp(name, 'i'),
-          /products/i,
+          new RegExp(permissionGroup, 'i'),
           ['Create', 'Edit', 'View', 'Delete', 'Manage'],
         );
 
@@ -99,11 +119,9 @@ test.describe('Roles & Permission Groups Module', () => {
 
     test('View assigned permissions for a role',
       async ({ rolesAndPermissionsPage, page }) => {
-        // Use the first existing role in the table
-        const row = await rolesAndPermissionsPage.findRoleRow(/.+/);
-        expect(row, 'at least one role should exist in the table').toBeTruthy();
-        const roleText = await row!.innerText();
-        const roleName = roleText.split(/\s+/).slice(0, 2).join(' ');
+        const roleName = uniqueName('QA_ViewPerms');
+        await rolesAndPermissionsPage.addRole(roleName);
+        await rolesAndPermissionsPage.expectRoleInTable(new RegExp(roleName, 'i'));
 
         await rolesAndPermissionsPage.viewRolePermissions(new RegExp(roleName, 'i'));
 
@@ -277,9 +295,7 @@ test.describe('Roles & Permission Groups Module', () => {
     test('Export roles to Excel',
       async ({ rolesAndPermissionsPage, page }) => {
         // The export icon is within the roles tab panel
-        const excelExportIcon = page
-          .locator('[id*="panel-roles"] .ant-pro-card-extra .anticon')
-          .last();
+        const excelExportIcon = page.getByRole('img', { name: /file-excel/i }).first();
 
         await expect(excelExportIcon, 'Excel export icon should be visible').toBeVisible({ timeout: 10000 });
 
@@ -297,9 +313,7 @@ test.describe('Roles & Permission Groups Module', () => {
 
     test('Export roles to PDF',
       async ({ rolesAndPermissionsPage, page }) => {
-        const pdfExportIcon = page
-          .locator('[id*="panel-roles"] .ant-pro-card-extra .anticon')
-          .first();
+        const pdfExportIcon = page.getByRole('img', { name: /file-pdf/i }).first();
 
         await expect(pdfExportIcon, 'PDF export icon should be visible').toBeVisible({ timeout: 10000 });
 

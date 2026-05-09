@@ -5,7 +5,8 @@ on:
     inputs:
       tag:
         type: string
-        required: true
+        required: false
+        default: ""
 
       shardIndex:
         type: string
@@ -34,9 +35,11 @@ on:
     secrets:
       ADMIN_TOKEN:
         required: true
+      SLACK_WEBHOOK_URL:
+        required: false
 
 env:
-  WORK_DIR: ./apitests
+  WORK_DIR: ./uitests
 
 jobs:
   Run-UI-Tests:
@@ -60,6 +63,7 @@ jobs:
         with:
           node-version: ${{ inputs.node-version }}
           cache: npm
+          cache-dependency-path: ${{ env.WORK_DIR }}/package-lock.json
 
       - name: Calculate cache key
         id: cache-key
@@ -78,11 +82,17 @@ jobs:
       - name: Run Playwright tests
         env:
           ADMIN_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
           ENVIRONMENT: ${{ inputs.environment }}
         run: |
-          npx playwright test \
-            --grep "${{ inputs.tag }}" \
-            --shard=${{ inputs.shardIndex }}/${{ inputs.shardTotal }}
+          if [ -n "${{ inputs.tag }}" ]; then
+            npx playwright test \
+              --grep "${{ inputs.tag }}" \
+              --shard=${{ inputs.shardIndex }}/${{ inputs.shardTotal }}
+          else
+            npx playwright test \
+              --shard=${{ inputs.shardIndex }}/${{ inputs.shardTotal }}
+          fi
 
       - name: Upload Artifacts
         if: always()

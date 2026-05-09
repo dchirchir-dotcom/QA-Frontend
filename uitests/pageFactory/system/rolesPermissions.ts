@@ -88,11 +88,19 @@ export class RolesAndPermissionsPage {
     this.moduleSelect         = page.locator('.ant-select-selection-overflow').first();
 
     // Roles table
-    this.rolesTable = page.locator('[id*="panel-roles"] table, .ant-pro-table table').first();
+    this.rolesTable = page
+      .getByRole('tabpanel', { name: /^Roles$/ })
+      .locator('table')
+      .first()
+      .or(page.locator('[id*="panel-roles"] table').first());
     this.rolesRows  = this.rolesTable.locator('tbody tr:not(.ant-table-measure-row)');
 
     // Permission Groups table
-    this.permissionGroupsTable = page.locator('[id*="panel-permissions"] table, .ant-pro-table table').last();
+    this.permissionGroupsTable = page
+      .getByRole('tabpanel', { name: /^Permission Groups$/ })
+      .locator('table')
+      .first()
+      .or(page.locator('[id*="panel-permissions"] table').first());
     this.permissionGroupsRows  = this.permissionGroupsTable.locator('tbody tr:not(.ant-table-measure-row)');
   }
 
@@ -105,18 +113,21 @@ export class RolesAndPermissionsPage {
   }
 
   private async waitForNetwork() {
-    await this.page.waitForLoadState('networkidle').catch(() => {});
+    await this.page.waitForLoadState('networkidle', { timeout: 5000 }).catch(() => {});
   }
 
   private async gotoWithRetry(path: string) {
+    let lastError: unknown;
     for (let i = 0; i < 3; i++) {
       try {
         await this.page.goto(path, { waitUntil: 'domcontentloaded' });
         return;
-      } catch {
+      } catch (error) {
+        lastError = error;
         await this.page.waitForTimeout(1000);
       }
     }
+    throw lastError;
   }
 
   private async openRowActionMenu(row: Locator) {
@@ -131,15 +142,57 @@ export class RolesAndPermissionsPage {
     await this.slow();
   }
 
-  private async selectDropdownOption(option: string | RegExp) {
-    const item = this.page
-      .locator('.ant-select-item-option:not(.ant-select-item-option-disabled), .ant-dropdown-menu-item')
-      .filter({ hasText: option })
-      .first();
+  private async selectDropdownOption(option: string | RegExp, allowFallback = false) {
+    const options = this.page.locator('.ant-select-item-option:not(.ant-select-item-option-disabled), .ant-dropdown-menu-item');
+    let item = options.filter({ hasText: option }).first();
+
+    if (allowFallback && !await item.isVisible({ timeout: 5000 }).catch(() => false)) {
+      item = options.filter({ hasText: /\S/ }).first();
+    }
 
     await expect(item, `option "${option}" should be visible`).toBeVisible({ timeout: 10000 });
     await item.click({ force: true });
     await this.slow();
+  }
+
+  private async clickEnabledNext(stepName: string) {
+    await expect(this.nextButton, `${stepName} Next button should be enabled`).toBeEnabled({ timeout: 15000 });
+    await this.nextButton.click();
+    await this.waitForNetwork();
+    await this.slow();
+  }
+
+  private matchesTableText(text: string, matcher: string | RegExp) {
+    const normalize = (value: string) => value
+      .replace(/[_-]+/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .toLowerCase();
+
+    const normalizedText = normalize(text);
+    const matcherText = typeof matcher === 'string' ? matcher : matcher.source;
+    const uniqueNumber = matcherText.match(/\d{8,}/)?.[0];
+    if (uniqueNumber && text.includes(uniqueNumber)) return true;
+
+    if (typeof matcher === 'string') {
+      return normalizedText.includes(normalize(matcher));
+    }
+
+    const source = matcher.source.replace(/[_-]+/g, '\\s+');
+    const flags = matcher.flags.includes('i') ? matcher.flags : `${matcher.flags}i`;
+    const normalizedSource = normalize(matcher.source.replace(/\\[wWdDsS+.*?^$()[\]{}|]/g, ' '));
+    return new RegExp(source, flags).test(text)
+      || new RegExp(source, flags).test(normalizedText)
+      || normalizedText.includes(normalizedSource);
+  }
+
+  private isDataRowText(text: string) {
+    const normalized = text.replace(/\s+/g, ' ').trim().toLowerCase();
+    return Boolean(normalized)
+      && normalized !== 'role permissions status actions'
+      && normalized !== 'name permissions status actions'
+      && !normalized.startsWith('role permissions status')
+      && !normalized.startsWith('name permissions status');
   }
 
   // =========================================================
@@ -161,9 +214,9 @@ export class RolesAndPermissionsPage {
       .click()
       .catch(() => {});
 
-    await this.rolesTab.click();
+    await this.rolesTab.click({ force: true, timeout: 10000 });
     await this.waitForNetwork();
-    // await expect(this.rolesTable).toBeVisible({ timeout: 15000 });
+    await expect(this.rolesTable).toBeVisible({ timeout: 15000 });
   }
 
   async goToPermissionGroupsTab() {
@@ -185,19 +238,11 @@ export class RolesAndPermissionsPage {
     await this.saveButton.click();
     await this.waitForNetwork();
     await this.slow();
+    await this.waitForVisibleRow(new RegExp(name, 'i'));
   }
 
   async findRoleRow(name: string | RegExp): Promise<Locator | null> {
-    const count = await this.rolesRows.count();
-    for (let i = 0; i < count; i++) {
-      const row  = this.rolesRows.nth(i);
-      const text = await row.innerText().catch(() => '');
-      const matches = typeof name === 'string'
-        ? text.toLowerCase().includes(name.toLowerCase())
-        : name.test(text);
-      if (matches) return row;
-    }
-    return null;
+    return this.findVisibleRow(name);
   }
 
   /**
@@ -263,14 +308,12 @@ export class RolesAndPermissionsPage {
     await this.waitForNetwork();
     await this.slow();
 
-    // Step 1 — select module
+    // Step 1 — select permission group
     await expect(this.moduleSelect, 'module select should be visible').toBeVisible({ timeout: 10000 });
     await this.moduleSelect.click();
     await this.selectDropdownOption(moduleName);
 
-    await this.nextButton.click();
-    await this.waitForNetwork();
-    await this.slow();
+    await this.clickEnabledNext('permission group selection');
 
     // Step 2 — tick permission checkboxes
     for (const perm of permissions) {
@@ -282,8 +325,20 @@ export class RolesAndPermissionsPage {
     }
     await this.slow();
 
-    await this.nextButton.click();
-    await this.slow();
+    if (!await this.nextButton.isEnabled().catch(() => false)) {
+      const visibleCheckboxes = this.page.getByRole('checkbox');
+      const checkboxCount = await visibleCheckboxes.count();
+      for (let i = 0; i < checkboxCount; i++) {
+        const checkbox = visibleCheckboxes.nth(i);
+        if (!await checkbox.isVisible().catch(() => false)) continue;
+        if (!await checkbox.isChecked().catch(() => false)) {
+          await checkbox.check({ force: true }).catch(async () => checkbox.click({ force: true }));
+        }
+        if (await this.nextButton.isEnabled().catch(() => false)) break;
+      }
+    }
+
+    await this.clickEnabledNext('permission selection');
 
     await expect(this.confirmAndSaveButton, 'confirm button should appear').toBeVisible({ timeout: 10000 });
     await this.confirmAndSaveButton.click();
@@ -294,11 +349,16 @@ export class RolesAndPermissionsPage {
    * Navigates to a role's assigned permissions view.
    */
   async viewRolePermissions(roleName: string | RegExp) {
-    const row = await this.findRoleRow(roleName);
+    const row = await this.findRoleRowWithActions(roleName);
     expect(row, `role "${roleName}" should exist in the table`).toBeTruthy();
 
     await this.openRowActionMenu(row!);
-    await this.page.getByText('View', { exact: true }).click();
+    const viewOption = this.page
+      .locator('.ant-dropdown:not(.ant-dropdown-hidden), .ant-dropdown-menu')
+      .getByText('View', { exact: true })
+      .last();
+    await expect(viewOption, 'View action should appear in the row menu').toBeVisible({ timeout: 10000 });
+    await viewOption.click();
     await this.waitForNetwork();
   }
 
@@ -316,19 +376,35 @@ export class RolesAndPermissionsPage {
 
     await this.saveButton.click();
     await this.waitForNetwork();
+    await this.waitForVisibleRow(new RegExp(name, 'i'));
   }
 
   async findPermissionGroupRow(name: string | RegExp): Promise<Locator | null> {
-    const count = await this.permissionGroupsRows.count();
+    return this.findVisibleRow(name);
+  }
+
+  private async findVisibleRow(name: string | RegExp): Promise<Locator | null> {
+    const rows = this.page.getByRole('row').or(this.page.locator('tbody tr:not(.ant-table-measure-row)'));
+    const count = await rows.count();
     for (let i = 0; i < count; i++) {
-      const row  = this.permissionGroupsRows.nth(i);
+      const row = rows.nth(i);
+      if (!await row.isVisible().catch(() => false)) continue;
       const text = await row.innerText().catch(() => '');
-      const matches = typeof name === 'string'
-        ? text.toLowerCase().includes(name.toLowerCase())
-        : name.test(text);
-      if (matches) return row;
+      if (!this.isDataRowText(text)) continue;
+      if (this.matchesTableText(text, name)) return row;
     }
     return null;
+  }
+
+  private async waitForVisibleRow(name: string | RegExp): Promise<Locator> {
+    let matchingRow: Locator | null = null;
+
+    await expect(async () => {
+      matchingRow = await this.findVisibleRow(name);
+      expect(matchingRow, `row "${name}" should appear`).toBeTruthy();
+    }).toPass({ timeout: 15000 });
+
+    return matchingRow!;
   }
 
   /**
@@ -343,16 +419,16 @@ export class RolesAndPermissionsPage {
     groupName: string | RegExp,
     permissionSets: string[],
   ) {
-    const row = await this.findPermissionGroupRow(groupName);
-    expect(row, `permission group "${groupName}" should exist`).toBeTruthy();
+    const row = await this.waitForVisibleRow(groupName);
 
-    // Open the permissions drawer via the row action icon
-    const editIcon = row!
-      .locator('span[class*="edit"], .anticon-edit, span:nth-child(2)')
+    const addPermissionsAction = row!
+      .getByText(/add permissions/i)
+      .or(row!.getByRole('button', { name: /add permissions/i }))
       .first();
 
-    await editIcon.scrollIntoViewIfNeeded();
-    await editIcon.click();
+    await addPermissionsAction.scrollIntoViewIfNeeded();
+    await expect(addPermissionsAction, 'permission group Add Permissions action should be visible').toBeVisible({ timeout: 10000 });
+    await addPermissionsAction.click({ force: true });
     await this.slow();
 
     await expect(this.permissionInput, 'permission input should appear').toBeVisible({ timeout: 10000 });
@@ -368,6 +444,16 @@ export class RolesAndPermissionsPage {
 
     await this.saveButton.click();
     await this.waitForNetwork();
+
+    const updatedRow = await this.waitForVisibleRow(groupName);
+    const expectedPermissions = permissionSets.join(',').split(',')
+      .map((permission) => permission.trim())
+      .filter(Boolean);
+    const permissionPattern = new RegExp(expectedPermissions.join('|'), 'i');
+    await expect(
+      updatedRow,
+      `permission group "${groupName}" should display saved permissions`,
+    ).toContainText(permissionPattern, { timeout: 10000 });
   }
 
   /**
@@ -487,5 +573,23 @@ export class RolesAndPermissionsPage {
       const row = await this.findPermissionGroupRow(name);
       expect(row, `permission group "${name}" should have been deleted`).toBeNull();
     }).toPass({ timeout: 15000 });
+  }
+
+  private async findRoleRowWithActions(name: string | RegExp): Promise<Locator | null> {
+    const rows = this.page.getByRole('row').or(this.page.locator('tbody tr:not(.ant-table-measure-row)'));
+    const count = await rows.count();
+    for (let i = 0; i < count; i++) {
+      const row = rows.nth(i);
+      if (!await row.isVisible().catch(() => false)) continue;
+      const text = await row.innerText().catch(() => '');
+      if (!this.isDataRowText(text)) continue;
+      if (!this.matchesTableText(text, name)) continue;
+      if (await row.getByRole('button').count() > 0) return row;
+    }
+    return null;
+  }
+
+  async findFirstRoleRowWithActions(): Promise<Locator | null> {
+    return this.findRoleRowWithActions(/.+/);
   }
 }

@@ -18,7 +18,7 @@ jobs:
     uses: ./.github/workflows/itibari-reusable.yaml
 
     with:
-      tag: "@Stock"
+      tag: ""
       environment: ${{ inputs.environment || 'PRODUCTION' }}
       shardIndex: 1
       shardTotal: 4
@@ -26,4 +26,5 @@ jobs:
       use-cache: true
 
     secrets:
-      TOKEN: ${{ secrets.PROD_TOKEN }}
+      ADMIN_TOKEN: ${{ secrets.PROD_TOKEN }}
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}

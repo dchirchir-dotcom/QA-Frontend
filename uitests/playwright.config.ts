@@ -7,14 +7,12 @@ dotenv.config();
 
 
 const authFile = 'playwright/.auth/user.json';
-
-let sendResultsValue : string;
-if (process.env.GITHUB_REF === "main") {
-  sendResultsValue = "on-failure"
-}
-else {
-  sendResultsValue = "off"
-}
+const slackWebhookUrl = process.env.SLACK_WEBHOOK_URL;
+const gitHubRefName = process.env.GITHUB_REF_NAME || process.env.GITHUB_REF?.replace('refs/heads/', '');
+const shouldReportToSlack = Boolean(slackWebhookUrl) && (!process.env.CI || gitHubRefName === 'main');
+const sendResultsValue = shouldReportToSlack
+  ? process.env.SLACK_SEND_RESULTS || 'on-failure'
+  : 'off';
 
 const config: PlaywrightTestConfig = {
   //testDir: './tests/**',
@@ -41,12 +39,12 @@ const config: PlaywrightTestConfig = {
 
   //npm i playwright-slack-report
 
-  reporter: process.env.CI
+  reporter: shouldReportToSlack
     ? [
       [
         "./node_modules/playwright-slack-report/dist/src/SlackReporter.js",
         {
-          slackWebHookUrl: process.env.SLACK_WEBHOOK_URL, //qa-alerts
+          slackWebHookUrl: slackWebhookUrl, // qa-alerts
           sendResults: sendResultsValue, // "always" , "on-failure", "off"
           layoutAsync: generateCustomLayoutAsync,
           slackLogLevel: LogLevel.ERROR,
@@ -73,6 +71,11 @@ const config: PlaywrightTestConfig = {
         ],
       ],
 
+  use: {
+    baseURL: _config.baseUrl,
+    trace: 'on-first-retry',
+  },
+
 
 
 /**
@@ -90,11 +93,11 @@ const config: PlaywrightTestConfig = {
     },
 
     /* Full authenticated run: refresh auth first, then execute tests with that state. */
-    // {
-    //   name: 'chromium',
-    //   use: { ...devices['Desktop Chrome'], storageState: authFile },
-    //   dependencies: ['setup'],
-    // },
+    {
+      name: 'chromium',
+      use: { ...devices['Desktop Chrome'], storageState: authFile },
+      dependencies: ['setup'],
+    },
 
     // {
     //   name: 'firefox',

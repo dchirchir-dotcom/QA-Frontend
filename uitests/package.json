@@ -6,13 +6,29 @@
     "lib": "lib",
     "test": "tests"
   },
-  "scripts": {},
+  "scripts": {
+    "test:auth": "playwright test --project=setup",
+    "test:login": "playwright test tests/login.spec.ts --project=chromium-auth",
+    "test:user-management": "playwright test tests/userManagement.spec.ts --project=chromium-auth --workers=1",
+    "test:user-management:refresh-auth": "playwright test tests/userManagement.spec.ts --project=chromium --workers=1",
+    "test:user-management:all": "playwright test tests/userManagement.spec.ts --project=chromium-auth --workers=1"
+  },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "description": "",
   "devDependencies": {
-    "@playwright/test": "^1.57.0",
-    "@types/node": "^24.10.1"
+    "@playwright/test": "^1.59.1",
+    "@types/node": "^24.12.3",
+    "monocart-reporter": "^2.11.1",
+    "playwright-ctrf-json-reporter": "^0.0.29",
+    "ts-node": "^10.9.2",
+    "typescript": "^6.0.3"
+  },
+  "dependencies": {
+    "@slack/web-api": "^7.15.2",
+    "dotenv": "^17.4.2",
+    "otpauth": "^9.5.1",
+    "playwright-slack-report": "^1.1.110"
   }
 }

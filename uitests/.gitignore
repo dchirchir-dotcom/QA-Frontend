@@ -7,3 +7,8 @@ node_modules/
 /blob-report/
 /playwright/.cache/
 /playwright/.auth/
+/LOGIN_FLOW_GUIDE.md
+/TEST_RUN_RESULTS.md
+../TEST_RUN_RESULTS.md
+../LOGIN_FLOW_GUIDE.md
+../.DS_Store

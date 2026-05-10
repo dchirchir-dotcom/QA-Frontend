@@ -1,19 +1,13 @@
 import { expect, Locator, Page, Download } from '@playwright/test';
 
 export class UserManagementPage {
-  // =========================================================
-  // PROPERTIES
-  // =========================================================
-
   readonly page: Page;
 
-  // Layout
   readonly heading: Locator;
   readonly table:   Locator;
   readonly rows:    Locator;
   readonly dialog:  Locator;
 
-  // Toolbar
   readonly searchInput:      Locator;
   readonly createUserButton: Locator;
   readonly refreshButton:    Locator;
@@ -21,45 +15,34 @@ export class UserManagementPage {
   readonly roleFilter:       Locator;
   readonly statusFilter:     Locator;
 
-  // Form actions
   readonly saveButton:   Locator;
   readonly cancelButton: Locator;
 
-  // Form validation
   readonly validationMessages:    Locator;
   readonly requiredErrorMessages: Locator;
 
-  // Form fields — basic info
   readonly firstNameInput: Locator;
   readonly lastNameInput:  Locator;
   readonly emailInput:     Locator;
   readonly phoneInput:     Locator;
 
-  // Form fields — identification
   readonly identificationNumberInput:        Locator;
   readonly companyIdentificationNumberInput: Locator;
   readonly countryCodeSelect:                Locator;
   readonly identificationTypeSelect:         Locator;
 
-  // Form fields — assignments
   readonly roleSelect:       Locator;
   readonly branchSelect:     Locator;
   readonly departmentSelect: Locator;
 
-  // =========================================================
-  // CONSTRUCTOR
-  // =========================================================
-
   constructor(page: Page) {
     this.page = page;
 
-    // Layout
     this.heading = page.getByRole('heading', { name: /user management|users/i }).first();
     this.table   = page.locator('table').first();
     this.rows    = this.table.locator('tbody tr:not(.ant-table-measure-row)');
     this.dialog  = page.locator('[role="dialog"], .modal, .ant-modal, .MuiDialog-root').first();
 
-    // Toolbar
     this.searchInput = page
       .locator('input[placeholder*="search" i], input[type="search"], input[aria-label*="search" i]')
       .first();
@@ -74,11 +57,9 @@ export class UserManagementPage {
     this.roleFilter   = page.getByRole('combobox', { name: /role/i }).or(page.getByLabel(/role/i)).first();
     this.statusFilter = page.getByRole('combobox', { name: /status/i }).or(page.getByLabel(/status/i)).first();
 
-    // Form actions
     this.saveButton   = page.getByRole('button', { name: /save|submit|create|invite/i }).first();
     this.cancelButton = page.getByRole('button', { name: /cancel|close|discard/i }).first();
 
-    // Validation
     this.validationMessages = page.locator(
       '[role="alert"], .error, .invalid-feedback, .ant-form-item-explain-error, .Mui-error'
     );
@@ -86,7 +67,6 @@ export class UserManagementPage {
       '.ant-form-item-explain-error, [role="alert"], .Mui-error'
     );
 
-    // Basic info fields
     this.firstNameInput = page
       .locator('#firstName')
       .or(page.getByPlaceholder(/enter first name/i))
@@ -111,7 +91,6 @@ export class UserManagementPage {
       .or(page.getByLabel(/phone number/i))
       .first();
 
-    // Identification fields
     this.identificationNumberInput = page
       .locator('#identificationNumber')
       .or(page.getByPlaceholder(/enter identification number/i))
@@ -130,10 +109,6 @@ export class UserManagementPage {
     this.branchSelect             = page.getByRole('combobox', { name: /branches/i }).first();
     this.departmentSelect         = page.getByRole('combobox', { name: /departments/i }).first();
   }
-
-  // =========================================================
-  // PRIVATE HELPERS
-  // =========================================================
 
   private async slow() {
     await this.page.waitForTimeout(1000);
@@ -244,10 +219,6 @@ export class UserManagementPage {
     ).not.toBeVisible({ timeout: 5000 });
   }
 
-  // =========================================================
-  // NAVIGATION
-  // =========================================================
-
   async navigate() {
     await this.gotoWithRetry('/system/user-management');
     await this.reloadIfServiceUnavailable();
@@ -265,10 +236,6 @@ export class UserManagementPage {
       expect(ok).toBeTruthy();
     }).toPass({ timeout: 15000 });
   }
-
-  // =========================================================
-  // USER ACTIONS
-  // =========================================================
 
   async openCreateUser() {
     await this.createUserButton.click();
@@ -302,26 +269,12 @@ export class UserManagementPage {
     await this.page.keyboard.press('Escape');
   }
 
-  // =========================================================
-  // EXPORT
-  // =========================================================
-
-  /**
-   * Opens the export menu (if any), clicks the option matching `label`,
-   * and waits for the resulting file download.
-   *
-   * Supports two common UI patterns:
-   *  1. Export button → dropdown with per-format options (Excel, PDF, CSV…).
-   *  2. Export button that directly triggers a download (no dropdown).
-   */
   async exportByLabel(label: RegExp): Promise<Download> {
     await expect(this.exportButton, 'export button should be visible').toBeVisible({ timeout: 10000 });
 
-    // Open the export trigger — capture a download in case the button fires one directly
     const directDownload = this.page.waitForEvent('download', { timeout: 5000 }).catch(() => null);
     await this.exportButton.click();
 
-    // Wait briefly to see if a dropdown appears
     const dropdown = this.page.locator(
       '.ant-dropdown:not(.ant-dropdown-hidden), .ant-menu, [role="menu"]'
     ).first();
@@ -329,7 +282,6 @@ export class UserManagementPage {
     const dropdownVisible = await dropdown.isVisible({ timeout: 2000 }).catch(() => false);
 
     if (dropdownVisible) {
-      // Dropdown pattern — find and click the format-specific item
       const formatItem = dropdown
         .locator('[role="menuitem"], .ant-menu-item, li, button, a')
         .filter({ hasText: label })
@@ -347,11 +299,9 @@ export class UserManagementPage {
       return download;
     }
 
-    // Direct-download pattern — return the download that was already triggered
     const resolved = await directDownload;
     if (resolved) return resolved;
 
-    // Last resort: click again and wait
     const [download] = await Promise.all([
       this.page.waitForEvent('download', { timeout: 30000 }),
       this.exportButton.click(),
@@ -359,14 +309,6 @@ export class UserManagementPage {
     return download;
   }
 
-  // =========================================================
-  // PAGINATION
-  // =========================================================
-
-  /**
-   * Clicks the "next page" control if it exists and is not disabled.
-   * Returns true if navigation was performed, false otherwise.
-   */
   async goToNextPageIfAvailable(): Promise<boolean> {
     const nextButton = this.page
       .locator(
@@ -391,14 +333,6 @@ export class UserManagementPage {
     return true;
   }
 
-  // =========================================================
-  // SORT & FILTER
-  // =========================================================
-
-  /**
-   * Opens the sort control (column sorter, sort button, or sort dropdown).
-   * Returns true if a sort trigger was found and clicked.
-   */
   async openSortMenu(): Promise<boolean> {
     const sortTrigger = this.page
       .locator(
@@ -419,10 +353,6 @@ export class UserManagementPage {
     return true;
   }
 
-  /**
-   * Opens the filter panel (filter button, filter icon, or drawer trigger).
-   * Returns true if a filter trigger was found and clicked.
-   */
   async openFilterMenu(): Promise<boolean> {
     const filterTrigger = this.page
       .locator(
@@ -441,10 +371,6 @@ export class UserManagementPage {
     await this.page.waitForLoadState('networkidle').catch(() => {});
     return true;
   }
-
-  // =========================================================
-  // FORM FILLING
-  // =========================================================
 
   async fillCreateUserForm(data: {
     firstName:                    string;
@@ -500,10 +426,6 @@ export class UserManagementPage {
     await this.selectOptional(this.departmentSelect, 'Departments', /select departments/i, data.departmentName); await this.slow();
     await this.selectOptional(this.roleSelect,       'Roles',       /select roles/i,       data.roleName);       await this.slow();
   }
-
-  // =========================================================
-  // TABLE HELPERS
-  // =========================================================
 
   async getRowCount(): Promise<number> {
     return this.rows.count();
@@ -603,10 +525,6 @@ export class UserManagementPage {
       expect(this.rowHasStatus(text, status), `row ${rowKey} should show ${status}`).toBeTruthy();
     }).toPass({ timeout: 20000 });
   }
-
-  // =========================================================
-  // VALIDATION
-  // =========================================================
 
   async expectValidationErrors() {
     await expect(this.requiredErrorMessages.first()).toBeVisible();

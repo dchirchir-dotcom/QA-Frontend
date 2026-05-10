@@ -15,7 +15,6 @@ test.describe('User Management Module', () => {
   test('Create user with all required fields', 
     async ({ userManagementPage, page }) => {
       const email = uniqueEmail();
-      // const totalUsersBefore = await userManagementPage.getDashboardCount(/total users/i);
 
       await userManagementPage.openCreateUser();
       await userManagementPage.fillCreateUserForm({
@@ -27,8 +26,6 @@ test.describe('User Management Module', () => {
       await userManagementPage.saveUserForm();
       await expect(page.getByText(/success|created|saved/i).first()).toBeVisible({ timeout: 10000 }).catch(async () => {
         await userManagementPage.navigate();
-        // const totalUsersAfter = await userManagementPage.getDashboardCount(/total users/i);
-        // expect(totalUsersAfter, `created user ${email} should increase Total Users count`).toBeGreaterThan(totalUsersBefore);
       });
   });
 

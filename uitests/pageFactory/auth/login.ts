@@ -17,13 +17,6 @@ export class _loginPage {
     this.page = page;
     this.usernameInput = page.getByPlaceholder('Enter Email');
 
-    // this.usernameInput = page.getByPlaceholder(/enter email|email|username/i)
-    //   .or(page.getByLabel(/email|username/i))
-    //   .or(page.locator('#username'))
-    //   .or(page.locator('input[name="username"]'))
-    //   .or(page.locator('input[type="email"]'))
-    //   .first();
-
     this.passwordInput = page.getByPlaceholder(/password/i)
       .or(page.getByLabel(/password/i))
       .or(page.locator('#password'))
@@ -65,15 +58,6 @@ export class _loginPage {
     waitForSuccess = true,
   ) {
     await this.fillCredentials(username, password);
-    // if (rememberMe && await this.rememberMeCheckbox.count() > 0) {
-    //   await this.rememberMeCheckbox.check().catch(() => {});
-    // }
-
-    // await this.submitLogin(username, password); 
-
-    // if (waitForSuccess) {
-    //   await this.waitForLoginSuccess();
-    // }
   }
 
   async loginWith2FA(
@@ -109,52 +93,32 @@ export class _loginPage {
     await this.page.waitForLoadState('networkidle').catch(() => {});
   }
 
-    async debugPage() {
-        console.log('\n========== PAGE DEBUG INFO ==========');
-        console.log(`[DEBUG] Current URL: ${this.page.url()}`);
-        console.log(`[DEBUG] Page title: ${await this.page.title()}`);
-        console.log(`[DEBUG] Input count: ${await this.page.locator('input').count()}`);
-        console.log(`[DEBUG] Button texts: ${(await this.page.locator('button').allTextContents()).join(', ')}`);
-        console.log(`[DEBUG] Username input count: ${await this.usernameInput.count()}`);
-        console.log(`[DEBUG] Password input count: ${await this.passwordInput.count()}`);
-        console.log(`[DEBUG] Login button count: ${await this.loginButton.count()}`);
-        console.log('=====================================\n');
-    }
+  async debugPage() {
+    console.log('\n========== PAGE DEBUG INFO ==========');
+    console.log(`[DEBUG] Current URL: ${this.page.url()}`);
+    console.log(`[DEBUG] Page title: ${await this.page.title()}`);
+    console.log(`[DEBUG] Input count: ${await this.page.locator('input').count()}`);
+    console.log(`[DEBUG] Button texts: ${(await this.page.locator('button').allTextContents()).join(', ')}`);
+    console.log(`[DEBUG] Username input count: ${await this.usernameInput.count()}`);
+    console.log(`[DEBUG] Password input count: ${await this.passwordInput.count()}`);
+    console.log(`[DEBUG] Login button count: ${await this.loginButton.count()}`);
+    console.log('=====================================\n');
+  }
 
+  private async fillCredentials(username: string, password: string) {
+    await this.fillInput(this.usernameInput, username);
+    await this.fillInput(this.passwordInput, password);
+    await expect(this.usernameInput).toHaveValue(username);
+    await expect(this.passwordInput).toHaveValue(password);
+    await this.page.getByRole('button', { name: 'Sign In' }).click();
+  }
 
-    private async fillCredentials(username: string, password: string) {
-        await this.fillInput(this.usernameInput, username);
-        await this.fillInput(this.passwordInput, password);
-        await expect(this.usernameInput).toHaveValue(username);
-        await expect(this.passwordInput).toHaveValue(password);
-        await this.page.getByRole('button', { name: 'Sign In' }).click();
-    }
-
-    private async fillInput(input: Locator, value: string) {
-        await input.click();        
-        await input.clear();        
-        await input.pressSequentially(value, { delay: 50 }); 
-        await input.blur();     
-    }
-
-//   private async ensureCredentials(username: string, password: string) {
-//     const currentUsername = await this.usernameInput.inputValue();
-//     const currentPassword = await this.passwordInput.inputValue();
-
-//     if (currentPassword !== password) {
-//       await this.fillInput(this.passwordInput, password);
-//     }
-
-//     if (currentUsername !== username || await this.usernameInput.inputValue() !== username) {
-//       await this.fillInput(this.usernameInput, username);
-//     }
-//   }
-
-//   private async submitLogin(username: string, password: string) {
-//     // await this.ensureCredentials(username, password);
-//     // await expect(this.loginButton).toBeVisible({ timeout: 10000 });
-//     await this.loginButton.click();
-//   }
+  private async fillInput(input: Locator, value: string) {
+    await input.click();
+    await input.clear();
+    await input.pressSequentially(value, { delay: 50 });
+    await input.blur();
+  }
 
   private async acknowledgeOTPSentPrompt(timeout = 30000) {
     const okayButton = this.page.getByRole('button', { name: /okay|ok|continue/i }).first();

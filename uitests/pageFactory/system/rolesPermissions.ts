@@ -1,79 +1,57 @@
 import { expect, Locator, Page } from '@playwright/test';
 
 export class RolesAndPermissionsPage {
-  // =========================================================
-  // PROPERTIES
-  // =========================================================
-
   readonly page: Page;
 
-  // Tabs
   readonly rolesTab:            Locator;
   readonly permissionGroupsTab: Locator;
 
-  // Roles toolbar
   readonly addRoleButton:    Locator;
   readonly filtersButton:    Locator;
   readonly refreshButton:    Locator;
 
-  // Permission Groups toolbar
   readonly addPermissionGroupButton: Locator;
 
-  // Shared form actions
   readonly saveButton:    Locator;
   readonly cancelButton:  Locator;
   readonly resetButton:   Locator;
 
-  // Role form
   readonly roleNameInput: Locator;
 
-  // Permission Group form
   readonly permissionGroupNameInput: Locator;
   readonly permissionInput:          Locator;
   readonly addPermissionButton:      Locator;
 
-  // Permission wizard
   readonly nextButton:            Locator;
   readonly previousButton:        Locator;
   readonly confirmAndSaveButton:  Locator;
   readonly moduleSelect:          Locator;
 
-  // Tables
   readonly rolesTable:            Locator;
   readonly rolesRows:             Locator;
   readonly permissionGroupsTable: Locator;
   readonly permissionGroupsRows:  Locator;
 
-  // =========================================================
-  // CONSTRUCTOR
-  // =========================================================
-
   constructor(page: Page) {
     this.page = page;
 
-    // Tabs
     this.rolesTab            = page.getByRole('tab', { name: 'Roles' });
     this.permissionGroupsTab = page.getByRole('tab', { name: 'Permission Groups' });
 
-    // Roles toolbar
     this.addRoleButton  = page.locator('button:has(span:text-is("Add Role"))')
       .or(page.getByRole('button', { name: /add role/i }))
       .first();
     this.filtersButton  = page.getByRole('button', { name: /filter/i }).first();
     this.refreshButton  = page.locator('.anticon-reload').first();
 
-    // Permission Groups toolbar
     this.addPermissionGroupButton = page.getByRole('button', { name: /add permission group/i });
 
-    // Shared form actions
     this.saveButton   = page.getByRole('button', { name: /save/i }).first();
     this.cancelButton = page.getByRole('button', { name: /cancel/i }).first();
     this.resetButton  = page.getByRole('button', { name: /reset/i }).first();
 
-    // Role form
     this.roleNameInput = page.getByRole('textbox', { name: /role name/i });
 
-    // Permission Group form
     this.permissionGroupNameInput = page
       .getByRole('textbox', { name: /enter name/i })
       .or(page.getByRole('textbox', { name: /permission group name/i }));
@@ -81,13 +59,11 @@ export class RolesAndPermissionsPage {
     this.permissionInput     = page.getByRole('textbox', { name: /enter permission/i });
     this.addPermissionButton = page.getByText('+ Add');
 
-    // Permission wizard navigation
     this.nextButton           = page.getByRole('button', { name: /next/i });
     this.previousButton       = page.getByRole('button', { name: /previous/i });
     this.confirmAndSaveButton = page.getByRole('button', { name: /confirm and save/i });
     this.moduleSelect         = page.locator('.ant-select-selection-overflow').first();
 
-    // Roles table
     this.rolesTable = page
       .getByRole('tabpanel', { name: /^Roles$/ })
       .locator('table')
@@ -95,7 +71,6 @@ export class RolesAndPermissionsPage {
       .or(page.locator('[id*="panel-roles"] table').first());
     this.rolesRows  = this.rolesTable.locator('tbody tr:not(.ant-table-measure-row)');
 
-    // Permission Groups table
     this.permissionGroupsTable = page
       .getByRole('tabpanel', { name: /^Permission Groups$/ })
       .locator('table')
@@ -103,10 +78,6 @@ export class RolesAndPermissionsPage {
       .or(page.locator('[id*="panel-permissions"] table').first());
     this.permissionGroupsRows  = this.permissionGroupsTable.locator('tbody tr:not(.ant-table-measure-row)');
   }
-
-  // =========================================================
-  // PRIVATE HELPERS
-  // =========================================================
 
   private async slow() {
     await this.page.waitForTimeout(1000);
@@ -195,10 +166,6 @@ export class RolesAndPermissionsPage {
       && !normalized.startsWith('name permissions status');
   }
 
-  // =========================================================
-  // NAVIGATION
-  // =========================================================
-
   async navigate() {
     await this.gotoWithRetry('/system/user-management');
     await this.waitForNetwork();
@@ -206,7 +173,6 @@ export class RolesAndPermissionsPage {
   }
 
   async goToRolesTab() {
-    // The sidebar "Roles" section click — matches the recorded flow
     await this.page
       .locator('div')
       .filter({ hasText: /^Roles$/ })
@@ -225,10 +191,6 @@ export class RolesAndPermissionsPage {
     await expect(this.permissionGroupsTable).toBeVisible({ timeout: 3000 });
   }
 
-  // =========================================================
-  // ROLES — CRUD
-  // =========================================================
-
   async addRole(name: string) {
     await this.addRoleButton.click();
     await this.slow();
@@ -245,10 +207,6 @@ export class RolesAndPermissionsPage {
     return this.findVisibleRow(name);
   }
 
-  /**
-   * Toggles the active/inactive status of the role identified by `roleName`.
-   * Clicks the confirm button if a dialog appears.
-   */
   async toggleRoleStatus(roleName: string | RegExp) {
     const row = await this.findRoleRow(roleName);
     expect(row, `role "${roleName}" should exist in the table`).toBeTruthy();
@@ -264,7 +222,6 @@ export class RolesAndPermissionsPage {
     await switchControl.click();
     await this.slow();
 
-    // Confirm dialog if it appears
     const confirmButton = this.page.getByRole('button', { name: /confirm|yes|ok/i }).last();
     if (await confirmButton.isVisible({ timeout: 3000 }).catch(() => false)) {
       await confirmButton.click();
@@ -273,18 +230,6 @@ export class RolesAndPermissionsPage {
     await this.waitForNetwork();
   }
 
-  // =========================================================
-  // ROLES — ADD PERMISSIONS WIZARD
-  // =========================================================
-
-  /**
-   * Full permission wizard flow for a role:
-   *  1. Open Add Permissions from the role row.
-   *  2. Select a module from the dropdown.
-   *  3. Click Next to reach the permissions step.
-   *  4. Check the supplied permission checkboxes.
-   *  5. Click Next → Confirm and Save.
-   */
   async addPermissionsToRole(
     roleName: string | RegExp,
     moduleName: string | RegExp,
@@ -293,7 +238,6 @@ export class RolesAndPermissionsPage {
     const row = await this.findRoleRow(roleName);
     expect(row, `role "${roleName}" should exist in the table`).toBeTruthy();
 
-    // Open "Add Permissions" — either from cell button or action menu
     const addPermissionsCell = row!.getByRole('button', { name: /add permissions/i })
       .or(row!.locator('td').filter({ hasText: /add permissions/i }))
       .first();
@@ -308,14 +252,12 @@ export class RolesAndPermissionsPage {
     await this.waitForNetwork();
     await this.slow();
 
-    // Step 1 — select permission group
     await expect(this.moduleSelect, 'module select should be visible').toBeVisible({ timeout: 10000 });
     await this.moduleSelect.click();
     await this.selectDropdownOption(moduleName);
 
     await this.clickEnabledNext('permission group selection');
 
-    // Step 2 — tick permission checkboxes
     for (const perm of permissions) {
       const checkbox = this.page.getByRole('checkbox', { name: perm });
       if (await checkbox.isVisible({ timeout: 3000 }).catch(() => false)) {
@@ -345,9 +287,6 @@ export class RolesAndPermissionsPage {
     await this.waitForNetwork();
   }
 
-  /**
-   * Navigates to a role's assigned permissions view.
-   */
   async viewRolePermissions(roleName: string | RegExp) {
     const row = await this.findRoleRowWithActions(roleName);
     expect(row, `role "${roleName}" should exist in the table`).toBeTruthy();
@@ -361,10 +300,6 @@ export class RolesAndPermissionsPage {
     await viewOption.click();
     await this.waitForNetwork();
   }
-
-  // =========================================================
-  // PERMISSION GROUPS — CRUD
-  // =========================================================
 
   async addPermissionGroup(name: string) {
     await this.addPermissionGroupButton.click();
@@ -407,14 +342,6 @@ export class RolesAndPermissionsPage {
     return matchingRow!;
   }
 
-  /**
-   * Opens the add-permissions drawer for a permission group row
-   * then fills in comma-separated permission strings and saves.
-   *
-   * `permissionSets` is an array of comma-separated strings, each
-   * submitted as a separate "+ Add" action, e.g.:
-   *   ['Create, Edit, View', 'Delete, Manage']
-   */
   async addPermissionsToGroup(
     groupName: string | RegExp,
     permissionSets: string[],
@@ -456,9 +383,6 @@ export class RolesAndPermissionsPage {
     ).toContainText(permissionPattern, { timeout: 10000 });
   }
 
-  /**
-   * Edits the name of an existing permission group.
-   */
   async editPermissionGroupName(
     currentName: string | RegExp,
     newName: string,
@@ -489,9 +413,6 @@ export class RolesAndPermissionsPage {
     await this.waitForNetwork();
   }
 
-  /**
-   * Deletes a permission group by name, confirming the dialog.
-   */
   async deletePermissionGroup(name: string | RegExp) {
     const row = await this.findPermissionGroupRow(name);
     expect(row, `permission group "${name}" should exist before deletion`).toBeTruthy();
@@ -507,9 +428,6 @@ export class RolesAndPermissionsPage {
     await this.waitForNetwork();
   }
 
-  /**
-   * Toggles active/inactive status of a permission group.
-   */
   async togglePermissionGroupStatus(name: string | RegExp) {
     const row = await this.findPermissionGroupRow(name);
     expect(row, `permission group "${name}" should exist`).toBeTruthy();
@@ -531,10 +449,6 @@ export class RolesAndPermissionsPage {
 
     await this.waitForNetwork();
   }
-
-  // =========================================================
-  // VALIDATION HELPERS
-  // =========================================================
 
   async expectSuccessToast() {
     await expect(

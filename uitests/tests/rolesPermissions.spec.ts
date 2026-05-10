@@ -3,7 +3,7 @@ import test from '../helper/baseTest';
 
 const uniqueName = (prefix: string) => `${prefix}_${Date.now()}`;
 
-    test.describe('Roles & Permission Groups Module', () => {
+test.describe('Roles & Permission Groups Module', () => {
   test.setTimeout(90000);
 
   test.beforeEach(async ({ rolesAndPermissionsPage }) => {
@@ -18,7 +18,6 @@ const uniqueName = (prefix: string) => `${prefix}_${Date.now()}`;
         const name = uniqueName('QA_Roles');
 
         await rolesAndPermissionsPage.addRole(name);
-        // await rolesAndPermissionsPage.expectRoleInTable(new RegExp(name, 'i'));
       }
     );
 
@@ -38,7 +37,6 @@ const uniqueName = (prefix: string) => `${prefix}_${Date.now()}`;
 
         await rolesAndPermissionsPage.toggleRoleStatus(new RegExp(name, 'i'));
 
-        // Verify the row now shows an inactive status badge
         const row = await rolesAndPermissionsPage.findRoleRow(new RegExp(name, 'i'));
         expect(row, 'role row should still be visible after deactivation').toBeTruthy();
         await expect(row!).toContainText(/inactive/i, { timeout: 10000 });
@@ -51,7 +49,6 @@ const uniqueName = (prefix: string) => `${prefix}_${Date.now()}`;
         await rolesAndPermissionsPage.addRole(name);
         await rolesAndPermissionsPage.toggleRoleStatus(new RegExp(name, 'i'));
 
-        // Deactivated — now reactivate
         await rolesAndPermissionsPage.toggleRoleStatus(new RegExp(name, 'i'));
 
         const row = await rolesAndPermissionsPage.findRoleRow(new RegExp(name, 'i'));
@@ -73,7 +70,6 @@ const uniqueName = (prefix: string) => `${prefix}_${Date.now()}`;
           ['Create', 'Edit', 'View'],
         );
 
-        // After saving, user should be back on the roles list
         await expect(rolesAndPermissionsPage.rolesTable).toBeVisible({ timeout: 15000 });
       }
     );
@@ -95,7 +91,6 @@ const uniqueName = (prefix: string) => `${prefix}_${Date.now()}`;
 
     test('View assigned permissions for a role',
       async ({ rolesAndPermissionsPage, page }) => {
-        // Use the first existing role in the table
         const row = await rolesAndPermissionsPage.findRoleRow(/.+/);
         expect(row, 'at least one role should exist in the table').toBeTruthy();
         const roleText = await row!.innerText();
@@ -110,10 +105,6 @@ const uniqueName = (prefix: string) => `${prefix}_${Date.now()}`;
     );
 
   });
-
-  // =========================================================
-  // PERMISSION GROUPS
-  // =========================================================
 
   test.describe('Permission Groups', () => {
 
@@ -149,7 +140,6 @@ const uniqueName = (prefix: string) => `${prefix}_${Date.now()}`;
           ['Create, Edit, View'],
         );
 
-        // Row should now show permission tags
         const row = await rolesAndPermissionsPage.findPermissionGroupRow(new RegExp(name, 'i'));
         expect(row, 'permission group row should still exist after adding permissions').toBeTruthy();
         await expect(row!).toContainText(/create|edit|view/i, { timeout: 10000 });
@@ -222,7 +212,6 @@ const uniqueName = (prefix: string) => `${prefix}_${Date.now()}`;
         await rolesAndPermissionsPage.addPermissionGroup(name);
         await rolesAndPermissionsPage.togglePermissionGroupStatus(new RegExp(name, 'i'));
 
-        // Now reactivate
         await rolesAndPermissionsPage.togglePermissionGroupStatus(new RegExp(name, 'i'));
 
         const row = await rolesAndPermissionsPage.findPermissionGroupRow(new RegExp(name, 'i'));
@@ -237,13 +226,11 @@ const uniqueName = (prefix: string) => `${prefix}_${Date.now()}`;
         const name = uniqueName('QA_Reset');
         await rolesAndPermissionsPage.addPermissionGroup(name);
 
-        // Open the group's permissions drawer
         const row = await rolesAndPermissionsPage.findPermissionGroupRow(new RegExp(name, 'i'));
         const editIcon = row!.locator('span[class*="edit"], .anticon-edit, span:nth-child(2)').first();
         await editIcon.click();
         await page.waitForTimeout(1000);
 
-        // Type some entries, then reset
         await rolesAndPermissionsPage.permissionInput.fill('ShouldBeCleared, NotSaved');
         await rolesAndPermissionsPage.addPermissionButton.click();
         await page.waitForTimeout(500);
@@ -251,28 +238,21 @@ const uniqueName = (prefix: string) => `${prefix}_${Date.now()}`;
         await rolesAndPermissionsPage.resetButton.click();
         await page.waitForTimeout(500);
 
-        // Confirm reset again if a second confirmation appeared
         const secondReset = page.getByRole('button', { name: /reset/i }).last();
         if (await secondReset.isVisible({ timeout: 2000 }).catch(() => false)) {
           await secondReset.click();
         }
 
-        // Input should be cleared
         await expect(rolesAndPermissionsPage.permissionInput).toHaveValue('');
       }
     );
 
   });
 
-  // =========================================================
-  // EXPORT
-  // =========================================================
-
   test.describe('Export', () => {
 
     test('Export roles to Excel',
       async ({ rolesAndPermissionsPage, page }) => {
-        // The export icon is within the roles tab panel
         const excelExportIcon = page
           .locator('[id*="panel-roles"] .ant-pro-card-extra .anticon')
           .last();

@@ -30,7 +30,7 @@ on:
 
       node-version:
         type: string
-        default: "20.x"
+        default: "24.x"
 
     secrets:
       ADMIN_TOKEN:
@@ -48,7 +48,7 @@ jobs:
     runs-on: ubuntu-latest
 
     container:
-      image: mcr.microsoft.com/playwright:v1.45.2-jammy
+      image: mcr.microsoft.com/playwright:v1.50.0-noble
 
     defaults:
       run:

@@ -30,37 +30,37 @@ test.describe('Authentication - Login Flow', () => {
    * Verifies that users can log in with email and password,
    * and the application navigates to the authenticated dashboard
   //  */
-  // test('should login with valid credentials', {
-  //   tag: '@Login',
-  //   annotation: {
-  //     type: 'critical',
-  //     description: 'User authentication with email/password'
-  //   }
-  // }, async ({ page, common, loginPage }) => {
-  //   console.log('\n[TEST] Test: Login with valid credentials');
+  test('should login with valid credentials', {
+    tag: '@Login',
+    annotation: {
+      type: 'critical',
+      description: 'User authentication with email/password'
+    }
+  }, async ({ page, common, loginPage }) => {
+    console.log('\n[TEST] Test: Login with valid credentials');
     
-  //   try {
-  //     // Debug: show page info before login attempt
-  //     await loginPage.debugPage();
+    try {
+      // Debug: show page info before login attempt
+      await loginPage.debugPage();
       
-  //     // Perform login
-  //     await loginPage.loginWithCredentials(
-  //       'd.chirchir@itibari.io',
-  //       'ebb0'
-  //     );
+      // Perform login
+      await loginPage.loginWithCredentials(
+        'd.chirchir@itibari.io',
+        'ebb0'
+      );
       
-  //     // Verify successful navigation
-  //     // The page should navigate to orders, dashboard, or home
-  //     await page.waitForURL(/orders|dashboard|home/, { timeout: 15000 });
+      // Verify successful navigation
+      // The page should navigate to orders, dashboard, or home
+      await page.waitForURL(/orders|dashboard|home/, { timeout: 15000 });
       
-  //     console.log('[TEST] ✓ User successfully logged in and navigated');
-  //   } catch (error) {
-  //     console.error('[TEST] ✗ Login test failed:', error);
-  //     // Debug info on failure
-  //     await loginPage.debugPage();
-  //     throw error;
-  //   }
-  // });
+      console.log('[TEST] ✓ User successfully logged in and navigated');
+    } catch (error) {
+      console.error('[TEST] ✗ Login test failed:', error);
+      // Debug info on failure
+      await loginPage.debugPage();
+      throw error;
+    }
+  });
 
   /**
    * Test 2: Login with 2FA/OTP
@@ -144,33 +144,33 @@ test.describe('Authentication - Login Flow', () => {
    * Verifies that the "Remember Me" checkbox works correctly
    * (if available in the UI)
    */
-  // test('should check Remember Me checkbox during login', {
-  //   tag: '@Login',
-  //   annotation: {
-  //     type: 'functional',
-  //     description: 'Remember Me checkbox functionality'
-  //   }
-  // }, async ({ page, loginPage }) => {
-  //   console.log('\n[TEST] Test: Remember Me checkbox');
+  test('should check Remember Me checkbox during login', {
+    tag: '@Login',
+    annotation: {
+      type: 'functional',
+      description: 'Remember Me checkbox functionality'
+    }
+  }, async ({ page, loginPage }) => {
+    console.log('\n[TEST] Test: Remember Me checkbox');
     
-  //   // Check if Remember Me checkbox exists
-  //   const rememberMeCount = await loginPage.rememberMeCheckbox.count();
+    // Check if Remember Me checkbox exists
+    const rememberMeCount = await loginPage.rememberMeCheckbox.count();
     
-  //   if (rememberMeCount === 0) {
-  //     test.skip(true, 'Remember Me checkbox not found in UI');
-  //     return;
-  //   }
+    if (rememberMeCount === 0) {
+      test.skip(true, 'Remember Me checkbox not found in UI');
+      return;
+    }
     
-  //   // Login with Remember Me enabled
-  //   await loginPage.loginWithCredentials(
-  //     'd.chirchir@itibari.io',
-  //     'dennis',
-  //     true // rememberMe = true
-  //   );
+    // Login with Remember Me enabled
+    await loginPage.loginWithCredentials(
+      'd.chirchir@itibari.io',
+      'dennis',
+      true // rememberMe = true
+    );
     
-  //   // Verify successful login
-  //   await page.waitForURL(/orders|dashboard|home/, { timeout: 15000 });
+    // Verify successful login
+    await page.waitForURL(/orders|dashboard|home/, { timeout: 15000 });
     
-  //   console.log('[TEST] ✓ Login with Remember Me completed successfully');
-  // });
+    console.log('[TEST] ✓ Login with Remember Me completed successfully');
+  });
 });

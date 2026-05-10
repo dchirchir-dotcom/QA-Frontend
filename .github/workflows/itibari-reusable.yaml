@@ -37,6 +37,12 @@ on:
         required: true
       SLACK_WEBHOOK_URL:
         required: false
+      ITIBARI_USERNAME:
+        required: false
+      ITIBARI_PASSWORD:
+        required: false
+      ITIBARI_TOTP_SECRET:
+        required: false
 
 env:
   WORK_DIR: ./uitests
@@ -95,14 +101,21 @@ jobs:
         env:
           ADMIN_TOKEN: ${{ secrets.ADMIN_TOKEN }}
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          ITIBARI_USERNAME: ${{ secrets.ITIBARI_USERNAME }}
+          ITIBARI_PASSWORD: ${{ secrets.ITIBARI_PASSWORD }}
+          ITIBARI_TOTP_SECRET: ${{ secrets.ITIBARI_TOTP_SECRET }}
           ENVIRONMENT: ${{ inputs.environment }}
         run: |
+          npx playwright test --project=setup
+
           if [ -n "${{ inputs.tag }}" ]; then
             npx playwright test \
+              --project=chromium-auth \
               --grep "${{ inputs.tag }}" \
               --shard=${{ inputs.shardIndex }}/${{ inputs.shardTotal }}
           else
             npx playwright test \
+              --project=chromium-auth \
               --shard=${{ inputs.shardIndex }}/${{ inputs.shardTotal }}
           fi
 

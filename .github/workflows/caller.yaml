@@ -28,3 +28,6 @@ jobs:
     secrets:
       ADMIN_TOKEN: ${{ secrets.PROD_TOKEN }}
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+      ITIBARI_USERNAME: ${{ secrets.ITIBARI_USERNAME }}
+      ITIBARI_PASSWORD: ${{ secrets.ITIBARI_PASSWORD }}
+      ITIBARI_TOTP_SECRET: ${{ secrets.ITIBARI_TOTP_SECRET }}

@@ -19,7 +19,7 @@ const ENVIRONMENT = process.env.ENVIRONMENT || TEST;
 
 if (ENVIRONMENT === PRODUCTION) {
     _config = {
-        baseUrl: process.env.BASE_URL || 'https://dev.itibari.io/',
+        baseUrl: process.env.BASE_URL || 'https://micro-dev.itibari.io/',
         username: prodUser.username,
         password: prodUser.password   
     };

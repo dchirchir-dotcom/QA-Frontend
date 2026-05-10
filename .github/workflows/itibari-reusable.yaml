@@ -43,6 +43,8 @@ on:
         required: false
       ITIBARI_TOTP_SECRET:
         required: false
+      PLAYWRIGHT_AUTH_STATE_BASE64:
+        required: false
 
 env:
   WORK_DIR: ./uitests
@@ -95,6 +97,19 @@ jobs:
             echo "::warning::SLACK_WEBHOOK_URL is not configured, so Slack alerts will not be sent."
           fi
 
+      - name: Restore Playwright auth state
+        env:
+          PLAYWRIGHT_AUTH_STATE_BASE64: ${{ secrets.PLAYWRIGHT_AUTH_STATE_BASE64 }}
+        run: |
+          if [ -z "$PLAYWRIGHT_AUTH_STATE_BASE64" ]; then
+            echo "No saved auth state secret configured; setup project will log in."
+            exit 0
+          fi
+
+          mkdir -p playwright/.auth
+          printf '%s' "$PLAYWRIGHT_AUTH_STATE_BASE64" | base64 -d > playwright/.auth/user.json
+          echo "Restored saved Playwright auth state."
+
       - name: Run Playwright tests
         id: playwright
         continue-on-error: true
@@ -106,7 +121,9 @@ jobs:
           ITIBARI_TOTP_SECRET: ${{ secrets.ITIBARI_TOTP_SECRET }}
           ENVIRONMENT: ${{ inputs.environment }}
         run: |
-          npx playwright test --project=setup
+          if [ ! -s playwright/.auth/user.json ]; then
+            npx playwright test --project=setup
+          fi
 
           if [ -n "${{ inputs.tag }}" ]; then
             npx playwright test \

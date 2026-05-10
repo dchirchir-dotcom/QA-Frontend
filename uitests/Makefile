@@ -6,3 +6,6 @@ prodTest:
 
 testAll:
 	npx playwright test tests/userManagement.spec.ts --headed --project=chromium --no-deps
+
+testUserManagement:
+	npx playwright test --grep '@usermanagament' --project=chromium-auth --workers=1

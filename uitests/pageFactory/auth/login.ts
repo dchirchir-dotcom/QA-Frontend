@@ -83,7 +83,6 @@ export class _loginPage {
     await this.loginWithCredentials(username, password, rememberMe, false);
     await this.acknowledgeOTPSentPrompt();
     await this.waitForOTPPrompt();
-    console.log('[LOGIN-2FA] Enter the authenticator code in the browser, then click Verify.');
     await this.waitForLoginSuccess(5 * 60 * 1000);
   }
 
@@ -91,18 +90,6 @@ export class _loginPage {
     await this.salesDiv.click();
     await this.ordersLink.click();
     await this.page.waitForLoadState('networkidle').catch(() => {});
-  }
-
-  async debugPage() {
-    console.log('\n========== PAGE DEBUG INFO ==========');
-    console.log(`[DEBUG] Current URL: ${this.page.url()}`);
-    console.log(`[DEBUG] Page title: ${await this.page.title()}`);
-    console.log(`[DEBUG] Input count: ${await this.page.locator('input').count()}`);
-    console.log(`[DEBUG] Button texts: ${(await this.page.locator('button').allTextContents()).join(', ')}`);
-    console.log(`[DEBUG] Username input count: ${await this.usernameInput.count()}`);
-    console.log(`[DEBUG] Password input count: ${await this.passwordInput.count()}`);
-    console.log(`[DEBUG] Login button count: ${await this.loginButton.count()}`);
-    console.log('=====================================\n');
   }
 
   private async fillCredentials(username: string, password: string) {

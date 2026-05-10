@@ -11,9 +11,7 @@ export class OTPHelper {
       secret: totpSecret,
     });
 
-    const otp = totp.generate();
-    console.log('[OTP] Generated 6-digit code');
-    return otp;
+    return totp.generate();
   }
 
   static splitOTP(otp: string): string[] {

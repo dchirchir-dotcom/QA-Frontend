@@ -4,7 +4,7 @@ import test from '../helper/baseTest';
 const uniqueEmail = () => `qa.user.${Date.now()}@itibari.io`;
 const longText = 'A'.repeat(260);
 
-test.describe('User Management Module', () => {
+test.describe('User Management Module', { tag: '@usermanagament' }, () => {
   test.setTimeout(60000);
 
   test.beforeEach(async ({ userManagementPage }) => {

@@ -2,10 +2,7 @@ import { expect } from '@playwright/test';
 import test from '../helper/baseTest';
 
 const uniqueName = (prefix: string) => `${prefix}_${Date.now()}`;
-
 test.describe('Roles & Permission Groups Module', () => {
-  test.setTimeout(90000);
-
   test.beforeEach(async ({ rolesAndPermissionsPage }) => {
     await rolesAndPermissionsPage.navigate();
     await rolesAndPermissionsPage.goToRolesTab();
@@ -70,7 +67,7 @@ test.describe('Roles & Permission Groups Module', () => {
           ['Create', 'Edit', 'View'],
         );
 
-        await expect(rolesAndPermissionsPage.rolesTable).toBeVisible({ timeout: 15000 });
+        await expect(rolesAndPermissionsPage.rolesTable).toBeVisible({ timeout: 1500 });
       }
     );
 
@@ -85,7 +82,7 @@ test.describe('Roles & Permission Groups Module', () => {
           ['Create', 'Edit', 'View', 'Delete', 'Manage'],
         );
 
-        await expect(rolesAndPermissionsPage.rolesTable).toBeVisible({ timeout: 15000 });
+        await expect(rolesAndPermissionsPage.rolesTable).toBeVisible({ timeout: 1500 });
       }
     );
 
@@ -142,7 +139,7 @@ test.describe('Roles & Permission Groups Module', () => {
 
         const row = await rolesAndPermissionsPage.findPermissionGroupRow(new RegExp(name, 'i'));
         expect(row, 'permission group row should still exist after adding permissions').toBeTruthy();
-        await expect(row!).toContainText(/create|edit|view/i, { timeout: 10000 });
+        await expect(row!).toContainText(/create|edit|view/i, { timeout: 1000 });
       }
     );
 
@@ -202,7 +199,7 @@ test.describe('Roles & Permission Groups Module', () => {
 
         const row = await rolesAndPermissionsPage.findPermissionGroupRow(new RegExp(name, 'i'));
         expect(row, 'row should exist after deactivation').toBeTruthy();
-        await expect(row!).toContainText(/inactive/i, { timeout: 10000 });
+        await expect(row!).toContainText(/inactive/i, { timeout: 1000 });
       }
     );
 
@@ -216,7 +213,7 @@ test.describe('Roles & Permission Groups Module', () => {
 
         const row = await rolesAndPermissionsPage.findPermissionGroupRow(new RegExp(name, 'i'));
         expect(row, 'row should exist after reactivation').toBeTruthy();
-        await expect(row!).toContainText(/active/i, { timeout: 10000 });
+        await expect(row!).toContainText(/active/i, { timeout: 1000 });
         await expect(row!).not.toContainText(/inactive/i);
       }
     );
@@ -260,7 +257,7 @@ test.describe('Roles & Permission Groups Module', () => {
         await expect(excelExportIcon, 'Excel export icon should be visible').toBeVisible({ timeout: 10000 });
 
         const [download] = await Promise.all([
-          page.waitForEvent('download', { timeout: 30000 }),
+          page.waitForEvent('download', { timeout: 3000 }),
           excelExportIcon.click(),
         ]);
 
@@ -277,10 +274,10 @@ test.describe('Roles & Permission Groups Module', () => {
           .locator('[id*="panel-roles"] .ant-pro-card-extra .anticon')
           .first();
 
-        await expect(pdfExportIcon, 'PDF export icon should be visible').toBeVisible({ timeout: 10000 });
+        await expect(pdfExportIcon, 'PDF export icon should be visible').toBeVisible({ timeout: 1000 });
 
         const [download] = await Promise.all([
-          page.waitForEvent('download', { timeout: 30000 }),
+          page.waitForEvent('download', { timeout: 3000 }),
           pdfExportIcon.click(),
         ]);
 

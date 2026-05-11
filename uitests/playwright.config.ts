@@ -57,6 +57,12 @@ const config: PlaywrightTestConfig = {
   use: {
     baseURL: _config.baseUrl,
     trace: 'on-first-retry',
+    acceptDownloads: true,
+    screenshot: 'only-on-failure',
+    video: 'retain-on-failure',
+    launchOptions: {
+      slowMo: 50,
+    },
   },
 
   projects: [

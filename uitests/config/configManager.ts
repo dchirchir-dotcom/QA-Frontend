@@ -15,7 +15,6 @@ let _config: Config = {
 
 const PRODUCTION = 'PRODUCTION';
 const TEST = 'TEST';
-
 const ENVIRONMENT = process.env.ENVIRONMENT || TEST;
 
 if (ENVIRONMENT === PRODUCTION) {

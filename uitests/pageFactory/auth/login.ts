@@ -86,12 +86,6 @@ export class _loginPage {
     await this.waitForLoginSuccess(5 * 60 * 1000);
   }
 
-  async navigateToOrders() {
-    await this.salesDiv.click();
-    await this.ordersLink.click();
-    await this.page.waitForLoadState('networkidle').catch(() => {});
-  }
-
   private async fillCredentials(username: string, password: string) {
     await this.fillInput(this.usernameInput, username);
     await this.fillInput(this.passwordInput, password);

@@ -7,8 +7,11 @@
     "test": "tests"
   },
   "scripts": {
+    "test": "playwright test --project=chromium-auth --workers=1",
     "test:auth": "playwright test --project=setup",
     "test:login": "playwright test tests/login.spec.ts --project=chromium-auth",
+    "test:master-data": "playwright test tests/masterDataSetup.spec.ts --project=chromium-auth --workers=1",
+    "test:roles-permissions": "playwright test tests/rolesPermissions.spec.ts --project=chromium-auth --workers=1",
     "test:user-management": "playwright test tests/userManagement.spec.ts --project=chromium-auth --workers=1",
     "test:user-management:all": "playwright test tests/userManagement.spec.ts --project=chromium-auth --workers=1"
   },

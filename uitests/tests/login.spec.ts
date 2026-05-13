@@ -2,6 +2,8 @@ import { expect } from '@playwright/test';
 import test from '../helper/baseTest';
 import _config from '../config/configManager';
 import { _loginPage } from '../pageFactory/auth/login';
+import { assertionPatterns } from '../helper/assertionText';
+import { commonLocators } from '../helper/locators';
 
 test.beforeEach(async ({ common }) => {
   await common.loadSite();
@@ -31,7 +33,7 @@ test.describe('Authentication - Login Flow', () => {
 
     await page.goto(_config.baseUrl);
     await loginPage.loginWith2FA(_config.username, _config.password, otpSecretOrCode!);
-    await expect(page.locator('body')).not.toContainText(/login|sign in/i);
+    await expect(commonLocators.body(page)).not.toContainText(assertionPatterns.auth.loginOrSignIn);
 
     await context.close();
   });

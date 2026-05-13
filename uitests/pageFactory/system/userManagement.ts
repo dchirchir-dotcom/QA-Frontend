@@ -1,4 +1,6 @@
 import { expect, Locator, Page, Download } from '@playwright/test';
+import { assertionText } from '../../helper/assertionText';
+import { commonLocators, userManagementLocators } from '../../helper/locators';
 
 export class UserManagementPage {
   readonly page: Page;
@@ -38,76 +40,31 @@ export class UserManagementPage {
   constructor(page: Page) {
     this.page = page;
 
-    this.heading = page.getByRole('heading', { name: /user management|users/i }).first();
-    this.table   = page.locator('table').first();
-    this.rows    = this.table.locator('tbody tr:not(.ant-table-measure-row)');
-    this.dialog  = page.locator('[role="dialog"], .modal, .ant-modal, .MuiDialog-root').first();
-
-    this.searchInput = page
-      .locator('input[placeholder*="search" i], input[type="search"], input[aria-label*="search" i]')
-      .first();
-
-    this.createUserButton = page
-      .getByRole('button', { name: /add user|create user|new user|invite user/i })
-      .first();
-
-    this.refreshButton = page.getByRole('button', { name: /refresh|reload/i }).first();
-    this.exportButton  = page.getByRole('button', { name: /export|download/i }).first();
-
-    this.roleFilter   = page.getByRole('combobox', { name: /role/i }).or(page.getByLabel(/role/i)).first();
-    this.statusFilter = page.getByRole('combobox', { name: /status/i }).or(page.getByLabel(/status/i)).first();
-
-    this.saveButton   = page.getByRole('button', { name: /save|submit|create|invite/i }).first();
-    this.cancelButton = page.getByRole('button', { name: /cancel|close|discard/i }).first();
-
-    this.validationMessages = page.locator(
-      '[role="alert"], .error, .invalid-feedback, .ant-form-item-explain-error, .Mui-error'
-    );
-    this.requiredErrorMessages = page.locator(
-      '.ant-form-item-explain-error, [role="alert"], .Mui-error'
-    );
-
-    this.firstNameInput = page
-      .locator('#firstName')
-      .or(page.getByPlaceholder(/enter first name/i))
-      .or(page.getByLabel(/first name/i))
-      .first();
-
-    this.lastNameInput = page
-      .locator('#lastName')
-      .or(page.getByPlaceholder(/enter last name/i))
-      .or(page.getByLabel(/last name/i))
-      .first();
-
-    this.emailInput = page
-      .locator('#email')
-      .or(page.getByPlaceholder(/please enter email|email/i))
-      .or(page.getByLabel(/email/i))
-      .first();
-
-    this.phoneInput = page
-      .getByPlaceholder(/705515476|712345678|phone/i)
-      .or(page.locator('#phoneNumber'))
-      .or(page.getByLabel(/phone number/i))
-      .first();
-
-    this.identificationNumberInput = page
-      .locator('#identificationNumber')
-      .or(page.getByPlaceholder(/enter identification number/i))
-      .or(page.getByLabel(/^identification number$/i))
-      .first();
-
-    this.companyIdentificationNumberInput = page
-      .locator('#companyIdentificationNumber')
-      .or(page.getByPlaceholder(/enter company identification number/i))
-      .or(page.getByLabel(/company identification number/i))
-      .first();
-
-    this.countryCodeSelect        = page.getByRole('combobox', { name: /country code/i }).first();
-    this.identificationTypeSelect = page.getByRole('combobox', { name: /identification type/i }).first();
-    this.roleSelect               = page.getByRole('combobox', { name: /roles/i }).first();
-    this.branchSelect             = page.getByRole('combobox', { name: /branches/i }).first();
-    this.departmentSelect         = page.getByRole('combobox', { name: /departments/i }).first();
+    this.heading = userManagementLocators.heading(page);
+    this.table = userManagementLocators.table(page);
+    this.rows = userManagementLocators.rows(this.table);
+    this.dialog = userManagementLocators.dialog(page);
+    this.searchInput = userManagementLocators.searchInput(page);
+    this.createUserButton = userManagementLocators.createUserButton(page);
+    this.refreshButton = userManagementLocators.refreshButton(page);
+    this.exportButton = userManagementLocators.exportButton(page);
+    this.roleFilter = userManagementLocators.roleFilter(page);
+    this.statusFilter = userManagementLocators.statusFilter(page);
+    this.saveButton = userManagementLocators.saveButton(page);
+    this.cancelButton = userManagementLocators.cancelButton(page);
+    this.validationMessages = userManagementLocators.validationMessages(page);
+    this.requiredErrorMessages = userManagementLocators.requiredErrorMessages(page);
+    this.firstNameInput = userManagementLocators.firstNameInput(page);
+    this.lastNameInput = userManagementLocators.lastNameInput(page);
+    this.emailInput = userManagementLocators.emailInput(page);
+    this.phoneInput = userManagementLocators.phoneInput(page);
+    this.identificationNumberInput = userManagementLocators.identificationNumberInput(page);
+    this.companyIdentificationNumberInput = userManagementLocators.companyIdentificationNumberInput(page);
+    this.countryCodeSelect = userManagementLocators.countryCodeSelect(page);
+    this.identificationTypeSelect = userManagementLocators.identificationTypeSelect(page);
+    this.roleSelect = userManagementLocators.roleSelect(page);
+    this.branchSelect = userManagementLocators.branchSelect(page);
+    this.departmentSelect = userManagementLocators.departmentSelect(page);
   }
 
   private async slow() {
@@ -126,7 +83,7 @@ export class UserManagementPage {
   }
 
   private async reloadIfServiceUnavailable() {
-    const body = this.page.locator('body');
+    const body = userManagementLocators.body(this.page);
     for (let i = 0; i < 2; i++) {
       const text = await body.innerText().catch(() => '');
       if (!/503|service unavailable/i.test(text)) return;
@@ -146,13 +103,12 @@ export class UserManagementPage {
     await dropdown.scrollIntoViewIfNeeded();
     await dropdown.click({ force: true });
 
-    const popup = this.page.locator('.ant-select-dropdown:not(.ant-select-dropdown-hidden)').last();
-    const item  = popup
-      .locator('.ant-select-item-option:not(.ant-select-item-option-disabled)')
+    const popup = userManagementLocators.selectPopup(this.page);
+    const item = userManagementLocators.selectOption(popup)
       .filter({ hasText: option })
       .first();
 
-    await expect(item, `${fieldName} option should be available`).toBeVisible({ timeout: 10000 });
+    await expect(item, assertionText.userManagement.dropdownOptionAvailable(fieldName)).toBeVisible({ timeout: 10000 });
     await item.click({ force: true }).catch(async () => {
       await item.evaluate((el) => (el as HTMLElement).click());
     });
@@ -184,12 +140,11 @@ export class UserManagementPage {
     await dropdown.scrollIntoViewIfNeeded();
     await dropdown.click({ force: true });
 
-    const popup = this.page.locator('.ant-select-dropdown:not(.ant-select-dropdown-hidden)').last();
-    const item  = popup
-      .locator('.ant-select-item-option:not(.ant-select-item-option-disabled)')
+    const popup = userManagementLocators.selectPopup(this.page);
+    const item = userManagementLocators.selectOption(popup)
       .first();
 
-    await expect(item, `${fieldName} option should be available`).toBeVisible({ timeout: 10000 });
+    await expect(item, assertionText.userManagement.dropdownOptionAvailable(fieldName)).toBeVisible({ timeout: 10000 });
     await item.click({ force: true }).catch(async () => {
       await item.evaluate((el) => (el as HTMLElement).click());
     });
@@ -202,20 +157,13 @@ export class UserManagementPage {
     fieldName: string,
     placeholder: RegExp,
   ) {
-    const selectedValue = dropdown
-      .locator(
-        '.ant-select-selection-item, ' +
-        '.ant-select-selection-overflow-item, ' +
-        '.ant-select-selection-item-content'
-      )
-      .filter({ hasText: /\S/ })
-      .first();
+    const selectedValue = userManagementLocators.selectedValue(dropdown);
 
     if (await selectedValue.isVisible({ timeout: 1000 }).catch(() => false)) return;
 
     await expect(
-      this.page.getByText(placeholder).first(),
-      `${fieldName} placeholder should disappear after selection`,
+      userManagementLocators.text(this.page, placeholder),
+      assertionText.userManagement.placeholderGone(fieldName),
     ).not.toBeVisible({ timeout: 5000 });
   }
 
@@ -232,7 +180,7 @@ export class UserManagementPage {
       const ok =
         (await this.heading.isVisible().catch(() => false)) ||
         (await this.table.isVisible().catch(() => false))   ||
-        (await this.page.getByText(/user management|users/i).first().isVisible().catch(() => false));
+        (await userManagementLocators.pageTitleText(this.page).isVisible().catch(() => false));
       expect(ok).toBeTruthy();
     }).toPass({ timeout: 15000 });
   }
@@ -242,18 +190,48 @@ export class UserManagementPage {
     await this.page.waitForURL(/create-user/).catch(() => {});
     await this.page.waitForLoadState('networkidle').catch(() => {});
     await expect(this.firstNameInput).toBeVisible();
+    return true;
   }
 
   async search(term: string) {
     if (await this.searchInput.count() === 0) return;
     await this.searchInput.fill(term);
     await this.searchInput.press('Enter').catch(() => {});
+    await this.page.waitForLoadState('networkidle').catch(() => {});
   }
 
   async clearSearch() {
     if (await this.searchInput.count() === 0) return;
     await this.searchInput.fill('');
     await this.searchInput.press('Enter').catch(() => {});
+    await this.page.waitForLoadState('networkidle').catch(() => {});
+  }
+
+  async expectSearchFinds(term: string, expectedText = term) {
+    await this.search(term);
+    await expect(
+      this.rows.filter({ hasText: expectedText }).first(),
+      assertionText.userManagement.searchIncludes(expectedText),
+    ).toBeVisible({ timeout: 10000 });
+  }
+
+  async expectSearchNoResults(term: string) {
+    await this.search(term);
+    await expect(
+      this.rows.filter({ hasText: term }).first(),
+      assertionText.userManagement.searchExcludes(term),
+    ).not.toBeVisible({ timeout: 5000 });
+  }
+
+  async expectSortKeepsTableUsable() {
+    const rowsBefore = await this.getVisibleRowTexts();
+    expect(rowsBefore.length, assertionText.userManagement.rowsBeforeSorting).toBeGreaterThan(0);
+
+    const opened = await this.openSortMenu();
+    expect(opened, assertionText.userManagement.sortControlAvailable).toBeTruthy();
+
+    const rowsAfter = await this.getVisibleRowTexts();
+    expect(rowsAfter.length, assertionText.userManagement.rowsAfterSorting).toBeGreaterThan(0);
   }
 
   async saveUserForm() {
@@ -270,26 +248,32 @@ export class UserManagementPage {
   }
 
   async exportByLabel(label: RegExp): Promise<Download> {
-    await expect(this.exportButton, 'export button should be visible').toBeVisible({ timeout: 10000 });
+    const directIcon = this.exportIcon(label);
+    if (await directIcon.isVisible({ timeout: 3000 }).catch(() => false)) {
+      const [download] = await Promise.all([
+        this.page.waitForEvent('download', { timeout: 30000 }),
+        directIcon.click(),
+      ]);
+      return download;
+    }
+
+    await expect(this.exportButton, assertionText.userManagement.exportButtonVisible).toBeVisible({ timeout: 10000 });
 
     const directDownload = this.page.waitForEvent('download', { timeout: 5000 }).catch(() => null);
     await this.exportButton.click();
 
-    const dropdown = this.page.locator(
-      '.ant-dropdown:not(.ant-dropdown-hidden), .ant-menu, [role="menu"]'
-    ).first();
+    const dropdown = userManagementLocators.exportDropdown(this.page);
 
     const dropdownVisible = await dropdown.isVisible({ timeout: 2000 }).catch(() => false);
 
     if (dropdownVisible) {
-      const formatItem = dropdown
-        .locator('[role="menuitem"], .ant-menu-item, li, button, a')
+      const formatItem = userManagementLocators.exportDropdownItems(dropdown)
         .filter({ hasText: label })
         .first();
 
       await expect(
         formatItem,
-        `export option "${label}" should be visible in the dropdown`,
+        assertionText.userManagement.exportOptionVisible(label),
       ).toBeVisible({ timeout: 5000 });
 
       const [download] = await Promise.all([
@@ -309,14 +293,57 @@ export class UserManagementPage {
     return download;
   }
 
+  async expectExportStarted(label: RegExp, fileName: RegExp) {
+    const directIcon = this.exportIcon(label);
+    if (await directIcon.isVisible({ timeout: 3000 }).catch(() => false)) {
+      await this.clickExportAndExpectStarted(directIcon, fileName);
+      return;
+    }
+
+    if (await this.exportButton.isVisible({ timeout: 3000 }).catch(() => false)) {
+      await this.exportButton.click();
+
+      const dropdown = userManagementLocators.exportDropdown(this.page);
+
+      if (await dropdown.isVisible({ timeout: 2000 }).catch(() => false)) {
+        const formatItem = userManagementLocators.exportDropdownItems(dropdown)
+          .filter({ hasText: label })
+          .first();
+
+        await expect(formatItem, assertionText.userManagement.exportOptionVisible(label)).toBeVisible({ timeout: 5000 });
+        await this.clickExportAndExpectStarted(formatItem, fileName);
+        return;
+      }
+
+      await this.clickExportAndExpectStarted(this.exportButton, fileName);
+      return;
+    }
+
+    await expect(directIcon, assertionText.userManagement.exportControlVisible(label)).toBeVisible({ timeout: 10000 });
+  }
+
+  private exportIcon(label: RegExp) {
+    return userManagementLocators.exportIcon(this.page, label);
+  }
+
+  private async clickExportAndExpectStarted(control: Locator, fileName: RegExp) {
+    const downloadPromise = this.page.waitForEvent('download', { timeout: 30000 }).catch(() => null);
+    await control.click();
+
+    const download = await downloadPromise;
+    if (download) {
+      expect(download.suggestedFilename(), assertionText.common.downloadedFileMatchesExportType).toMatch(fileName);
+      return;
+    }
+
+    await expect(
+      commonLocators.exportStartedMessage(this.page),
+      assertionText.common.exportQueued,
+    ).toBeVisible({ timeout: 10000 });
+  }
+
   async goToNextPageIfAvailable(): Promise<boolean> {
-    const nextButton = this.page
-      .locator(
-        '.ant-pagination-next:not(.ant-pagination-disabled) button, ' +
-        'button[aria-label*="next" i]:not([disabled]), '              +
-        'li[title="Next Page"]:not(.ant-pagination-disabled)'
-      )
-      .first();
+    const nextButton = userManagementLocators.nextPageButton(this.page);
 
     const visible = await nextButton.isVisible({ timeout: 5000 }).catch(() => false);
     if (!visible) return false;
@@ -334,16 +361,7 @@ export class UserManagementPage {
   }
 
   async openSortMenu(): Promise<boolean> {
-    const sortTrigger = this.page
-      .locator(
-        'button[aria-label*="sort" i], '                     +
-        '.ant-table-column-sorters, '                        +
-        'th .ant-table-column-sorter, '                      +
-        '[data-testid*="sort" i], '                          +
-        'button:has-text("Sort"), '                          +
-        '.ant-dropdown-trigger:has([aria-label*="sort" i])'
-      )
-      .first();
+    const sortTrigger = userManagementLocators.sortTrigger(this.page);
 
     const visible = await sortTrigger.isVisible({ timeout: 5000 }).catch(() => false);
     if (!visible) return false;
@@ -354,15 +372,7 @@ export class UserManagementPage {
   }
 
   async openFilterMenu(): Promise<boolean> {
-    const filterTrigger = this.page
-      .locator(
-        'button[aria-label*="filter" i], '                     +
-        '.ant-table-filter-trigger, '                          +
-        '[data-testid*="filter" i], '                          +
-        'button:has-text("Filter"), '                          +
-        '.ant-dropdown-trigger:has([aria-label*="filter" i])'
-      )
-      .first();
+    const filterTrigger = userManagementLocators.filterTrigger(this.page);
 
     const visible = await filterTrigger.isVisible({ timeout: 5000 }).catch(() => false);
     if (!visible) return false;
@@ -431,6 +441,21 @@ export class UserManagementPage {
     return this.rows.count();
   }
 
+  async getVisibleRowTexts(): Promise<string[]> {
+    const count = await this.rows.count();
+    const texts: string[] = [];
+
+    for (let i = 0; i < count; i++) {
+      const row = this.rows.nth(i);
+      if (!await row.isVisible().catch(() => false)) continue;
+      const text = (await row.innerText().catch(() => '')).trim();
+      if (!text || /no data/i.test(text)) continue;
+      texts.push(text);
+    }
+
+    return texts;
+  }
+
   async getFirstRowEmail(): Promise<string | null> {
     const text  = await this.rows.first().innerText().catch(() => '');
     const match = text.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i);
@@ -439,14 +464,14 @@ export class UserManagementPage {
 
   async deactivateAndReactivateFirstActiveUser() {
     const activeRow = await this.getFirstRowByStatus('Active');
-    expect(activeRow, 'an active user row should be available to deactivate').toBeTruthy();
+    expect(activeRow, assertionText.userManagement.activeUserAvailable).toBeTruthy();
 
     const rowKey = await this.getRowKey(activeRow!);
     await this.toggleUserStatusFromRow(activeRow!, /deactivate|confirm|yes|ok/i);
     await this.expectUserStatus(rowKey, 'Inactive');
 
     const inactiveRow = await this.getRowByKey(rowKey);
-    expect(inactiveRow, 'the same user row should be available to reactivate').toBeTruthy();
+    expect(inactiveRow, assertionText.userManagement.inactiveUserAvailable).toBeTruthy();
 
     await this.toggleUserStatusFromRow(inactiveRow!, /activate|confirm|yes|ok/i);
     await this.expectUserStatus(rowKey, 'Active');
@@ -494,12 +519,11 @@ export class UserManagementPage {
     await row.scrollIntoViewIfNeeded();
 
     const actionButton = row.getByRole('button').last();
-    await expect(actionButton, 'row action menu button should be visible').toBeVisible({ timeout: 10000 });
+    await expect(actionButton, assertionText.userManagement.rowActionMenuButtonVisible).toBeVisible({ timeout: 10000 });
     await actionButton.click();
 
-    const switchControl = this.page.getByRole('switch').last()
-      .or(this.page.locator('.ant-switch').last());
-    await expect(switchControl, 'status switch should be visible in row action menu').toBeVisible({ timeout: 10000 });
+    const switchControl = userManagementLocators.statusSwitch(this.page);
+    await expect(switchControl, assertionText.userManagement.statusSwitchVisible).toBeVisible({ timeout: 10000 });
     await switchControl.click();
 
     await this.confirmStatusChange(confirmButtonName);
@@ -508,7 +532,7 @@ export class UserManagementPage {
   }
 
   private async confirmStatusChange(confirmButtonName: RegExp) {
-    const confirmButton = this.page.getByRole('button', { name: confirmButtonName }).last();
+    const confirmButton = userManagementLocators.confirmButton(this.page, confirmButtonName);
     if (await confirmButton.isVisible({ timeout: 5000 }).catch(() => false)) {
       await confirmButton.click();
       return;

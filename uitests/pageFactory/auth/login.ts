@@ -1,5 +1,7 @@
 import { expect, Locator, Page } from '@playwright/test';
 import { OTPHelper } from '../../helper/otpHelper';
+import { assertionText } from '../../helper/assertionText';
+import { authLocators } from '../../helper/locators';
 
 export class _loginPage {
   readonly page: Page;
@@ -15,36 +17,15 @@ export class _loginPage {
 
   constructor(page: Page) {
     this.page = page;
-    this.usernameInput = page.getByPlaceholder('Enter Email');
-
-    this.passwordInput = page.getByPlaceholder(/password/i)
-      .or(page.getByLabel(/password/i))
-      .or(page.locator('#password'))
-      .or(page.locator('input[name="password"]'))
-      .or(page.locator('input[type="password"]'))
-      .first();
-
-    this.rememberMeCheckbox = page.locator('#autoLogin').or(page.locator('input[type="checkbox"]')).first();
-    this.loginButton = page.getByRole('button', { name: /login|sign in|submit|authenticate/i })
-      .or(page.locator('button[type="submit"]'))
-      .or(page.locator('form button').first())
-      .first();
-
-    this.otpInputs = page.locator('.ant-otp input')
-      .or(page.locator('input[aria-label*="OTP" i]'))
-      .or(page.locator('input[autocomplete="one-time-code"]'))
-      .or(page.locator('input[inputmode="numeric"]'))
-      .or(page.locator('input[name*="otp" i], input[name*="code" i], input[id*="otp" i], input[id*="code" i]'))
-      .or(page.getByLabel(/otp|code|authenticator|verification|mfa|2fa/i))
-      .or(page.getByPlaceholder(/otp|code|authenticator|verification|mfa|2fa/i));
-
-    this.otpSubmitButton = page.getByRole('button', { name: /verify|submit|confirm|complete/i })
-      .or(page.locator('button[type="submit"]'))
-      .first();
-
-    this.avatarImg = page.getByRole('img', { name: /avatar/i });
-    this.salesDiv = page.getByRole('link', { name: 'Sales' });
-    this.ordersLink = page.getByRole('link', { name: 'Orders' });
+    this.usernameInput = authLocators.usernameInput(page);
+    this.passwordInput = authLocators.passwordInput(page);
+    this.rememberMeCheckbox = authLocators.rememberMeCheckbox(page);
+    this.loginButton = authLocators.loginButton(page);
+    this.otpInputs = authLocators.otpInputs(page);
+    this.otpSubmitButton = authLocators.otpSubmitButton(page);
+    this.avatarImg = authLocators.avatarImg(page);
+    this.salesDiv = authLocators.salesLink(page);
+    this.ordersLink = authLocators.ordersLink(page);
   }
 
   async login(username: string, password: string) {
@@ -91,7 +72,7 @@ export class _loginPage {
     await this.fillInput(this.passwordInput, password);
     await expect(this.usernameInput).toHaveValue(username);
     await expect(this.passwordInput).toHaveValue(password);
-    await this.page.getByRole('button', { name: 'Sign In' }).click();
+    await authLocators.signInButton(this.page).click();
   }
 
   private async fillInput(input: Locator, value: string) {
@@ -102,7 +83,7 @@ export class _loginPage {
   }
 
   private async acknowledgeOTPSentPrompt(timeout = 30000) {
-    const okayButton = this.page.getByRole('button', { name: /okay|ok|continue/i }).first();
+    const okayButton = authLocators.otpOkayButton(this.page);
 
     await expect(okayButton).toBeVisible({ timeout });
     await okayButton.click();
@@ -149,8 +130,8 @@ export class _loginPage {
       const avatarVisible = await this.avatarImg.isVisible().catch(() => false);
       const authenticatedUrl = /dashboard|orders|home|system|sales|user-management/i.test(this.page.url());
 
-      expect(loginFormVisible, 'login form should not still be visible').toBeFalsy();
-      expect(otpPromptVisible, 'OTP prompt should not still be visible').toBeFalsy();
+      expect(loginFormVisible, assertionText.auth.loginFormHidden).toBeFalsy();
+      expect(otpPromptVisible, assertionText.auth.otpPromptHidden).toBeFalsy();
       expect(tokenPresent || avatarVisible || authenticatedUrl).toBeTruthy();
     }).toPass({ timeout });
 

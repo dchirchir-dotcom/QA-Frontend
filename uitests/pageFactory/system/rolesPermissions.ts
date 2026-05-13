@@ -1,4 +1,6 @@
 import { expect, Locator, Page } from '@playwright/test';
+import { assertionText } from '../../helper/assertionText';
+import { rolesPermissionsLocators } from '../../helper/locators';
 
 type Permission = 'Create' | 'Edit' | 'View' | 'Delete' | 'Add' | 'Manage';
 
@@ -42,48 +44,27 @@ export class RolesAndPermissionsPage {
   constructor(page: Page) {
     this.page = page;
 
-    this.rolesTab            = page.getByRole('tab', { name: 'Roles' });
-    this.permissionGroupsTab = page.getByRole('tab', { name: 'Permission Groups' });
-
-    this.addRoleButton = page
-      .locator('button:has(span:text-is("Add Role"))')
-      .or(page.getByRole('button', { name: /add role/i }))
-      .first();
-    this.filtersButton = page.getByRole('button', { name: /filter/i }).first();
-    this.refreshButton = page.locator('.anticon-reload').first();
-
-    this.addPermissionGroupButton = page.getByRole('button', { name: /add permission group/i });
-
-    this.saveButton   = page.getByRole('button', { name: /save/i }).first();
-    this.cancelButton = page.getByRole('button', { name: /cancel/i }).first();
-    this.resetButton  = page.getByRole('button', { name: /reset/i }).first();
-
-    this.roleNameInput = page.getByRole('textbox', { name: /role name/i });
-
-    this.permissionGroupNameInput = page
-      .getByRole('textbox', { name: /enter name/i })
-      .or(page.getByRole('textbox', { name: /permission group name/i }));
-    this.permissionInput     = page.getByRole('textbox', { name: /enter permission/i });
-    this.addPermissionButton = page.getByText('+ Add');
-
-    this.nextButton           = page.getByRole('button', { name: /next/i });
-    this.previousButton       = page.getByRole('button', { name: /previous/i });
-    this.confirmAndSaveButton = page.getByRole('button', { name: /confirm and save/i });
-    this.moduleSelect         = page.locator('.ant-select-selection-overflow').first();
-
-    this.rolesTable = page
-      .getByRole('tabpanel', { name: /^Roles$/ })
-      .locator('table')
-      .first()
-      .or(page.locator('[id*="panel-roles"] table').first());
-    this.rolesRows  = this.rolesTable.locator('tbody tr:not(.ant-table-measure-row)');
-
-    this.permissionGroupsTable = page
-      .getByRole('tabpanel', { name: /^Permission Groups$/ })
-      .locator('table')
-      .first()
-      .or(page.locator('[id*="panel-permissions"] table').first());
-    this.permissionGroupsRows  = this.permissionGroupsTable.locator('tbody tr:not(.ant-table-measure-row)');
+    this.rolesTab = rolesPermissionsLocators.rolesTab(page);
+    this.permissionGroupsTab = rolesPermissionsLocators.permissionGroupsTab(page);
+    this.addRoleButton = rolesPermissionsLocators.addRoleButton(page);
+    this.filtersButton = rolesPermissionsLocators.filtersButton(page);
+    this.refreshButton = rolesPermissionsLocators.refreshButton(page);
+    this.addPermissionGroupButton = rolesPermissionsLocators.addPermissionGroupButton(page);
+    this.saveButton = rolesPermissionsLocators.saveButton(page);
+    this.cancelButton = rolesPermissionsLocators.cancelButton(page);
+    this.resetButton = rolesPermissionsLocators.resetButton(page);
+    this.roleNameInput = rolesPermissionsLocators.roleNameInput(page);
+    this.permissionGroupNameInput = rolesPermissionsLocators.permissionGroupNameInput(page);
+    this.permissionInput = rolesPermissionsLocators.permissionInput(page);
+    this.addPermissionButton = rolesPermissionsLocators.addPermissionButton(page);
+    this.nextButton = rolesPermissionsLocators.nextButton(page);
+    this.previousButton = rolesPermissionsLocators.previousButton(page);
+    this.confirmAndSaveButton = rolesPermissionsLocators.confirmAndSaveButton(page);
+    this.moduleSelect = rolesPermissionsLocators.moduleSelect(page);
+    this.rolesTable = rolesPermissionsLocators.rolesTable(page);
+    this.rolesRows = rolesPermissionsLocators.tableRows(this.rolesTable);
+    this.permissionGroupsTable = rolesPermissionsLocators.permissionGroupsTable(page);
+    this.permissionGroupsRows = rolesPermissionsLocators.tableRows(this.permissionGroupsTable);
   }
 
   async navigate() {
@@ -93,12 +74,7 @@ export class RolesAndPermissionsPage {
   }
 
   async goToRolesTab() {
-    await this.page
-      .locator('div')
-      .filter({ hasText: /^Roles$/ })
-      .first()
-      .click()
-      .catch(() => {});
+    await rolesPermissionsLocators.rolesTabText(this.page).click().catch(() => {});
 
     await this.rolesTab.click({ force: true, timeout: 10000 });
     await this.waitForNetwork();
@@ -127,16 +103,13 @@ export class RolesAndPermissionsPage {
 
   async toggleRoleStatus(roleName: string | RegExp) {
     const row = await this.findRoleRow(roleName);
-    expect(row, `role "${roleName}" should exist in the table`).toBeTruthy();
+    expect(row, assertionText.rolesPermissions.roleExists(roleName)).toBeTruthy();
 
     await this.openRowActionMenu(row!);
 
-    const statusSwitch = this.page
-      .getByRole('switch')
-      .or(this.page.locator('.ant-switch'))
-      .last();
+    const statusSwitch = rolesPermissionsLocators.statusSwitch(this.page);
 
-    await expect(statusSwitch, 'status switch should appear').toBeVisible({ timeout: 10000 });
+    await expect(statusSwitch, assertionText.rolesPermissions.statusSwitchAppears).toBeVisible({ timeout: 10000 });
     await statusSwitch.click();
     await this.pause();
 
@@ -150,11 +123,11 @@ export class RolesAndPermissionsPage {
     permissions: Permission[],
   ) {
     const row = await this.findRoleRow(roleName);
-    expect(row, `role "${roleName}" should exist in the table`).toBeTruthy();
+    expect(row, assertionText.rolesPermissions.roleExists(roleName)).toBeTruthy();
 
     await this.openAddPermissionsPanel(row!);
 
-    await expect(this.moduleSelect, 'module select should be visible').toBeVisible({ timeout: 10000 });
+    await expect(this.moduleSelect, assertionText.rolesPermissions.moduleSelectVisible).toBeVisible({ timeout: 10000 });
     await this.moduleSelect.click();
     await this.selectDropdownOption(moduleName);
     await this.clickNextWhenEnabled('module selection');
@@ -162,23 +135,20 @@ export class RolesAndPermissionsPage {
     await this.checkPermissions(permissions);
     await this.clickNextWhenEnabled('permission selection');
 
-    await expect(this.confirmAndSaveButton, 'confirm button should appear').toBeVisible({ timeout: 10000 });
+    await expect(this.confirmAndSaveButton, assertionText.rolesPermissions.confirmButtonAppears).toBeVisible({ timeout: 10000 });
     await this.confirmAndSaveButton.click();
     await this.waitForNetwork();
   }
 
   async viewRolePermissions(roleName: string | RegExp) {
     const row = await this.findRoleRowWithActions(roleName);
-    expect(row, `role "${roleName}" should exist in the table`).toBeTruthy();
+    expect(row, assertionText.rolesPermissions.roleExists(roleName)).toBeTruthy();
 
     await this.openRowActionMenu(row!);
 
-    const viewOption = this.page
-      .locator('.ant-dropdown:not(.ant-dropdown-hidden), .ant-dropdown-menu')
-      .getByText('View', { exact: true })
-      .last();
+    const viewOption = rolesPermissionsLocators.viewOption(this.page);
 
-    await expect(viewOption, 'View option should appear in the row menu').toBeVisible({ timeout: 10000 });
+    await expect(viewOption, assertionText.rolesPermissions.viewOptionAppears).toBeVisible({ timeout: 10000 });
     await viewOption.click();
     await this.waitForNetwork();
   }
@@ -187,7 +157,7 @@ export class RolesAndPermissionsPage {
     await this.addPermissionGroupButton.click();
     await this.pause();
 
-    await expect(this.permissionGroupNameInput, 'name input should appear').toBeVisible({ timeout: 10000 });
+    await expect(this.permissionGroupNameInput, assertionText.rolesPermissions.nameInputAppears).toBeVisible({ timeout: 10000 });
     await this.permissionGroupNameInput.fill(name);
     await this.pause();
 
@@ -199,17 +169,14 @@ export class RolesAndPermissionsPage {
   async addPermissionsToGroup(groupName: string | RegExp, permissionSets: string[]) {
     const row = await this.waitForRowToAppear(groupName);
 
-    const addPermissionsAction = row
-      .getByText(/add permissions/i)
-      .or(row.getByRole('button', { name: /add permissions/i }))
-      .first();
+    const addPermissionsAction = rolesPermissionsLocators.addPermissionsAction(row);
 
     await addPermissionsAction.scrollIntoViewIfNeeded();
-    await expect(addPermissionsAction, 'Add Permissions action should be visible').toBeVisible({ timeout: 10000 });
+    await expect(addPermissionsAction, assertionText.rolesPermissions.addPermissionsActionVisible).toBeVisible({ timeout: 10000 });
     await addPermissionsAction.click({ force: true });
     await this.pause();
 
-    await expect(this.permissionInput, 'permission input should appear').toBeVisible({ timeout: 10000 });
+    await expect(this.permissionInput, assertionText.rolesPermissions.permissionInputAppears).toBeVisible({ timeout: 10000 });
 
     for (const permSet of permissionSets) {
       await this.permissionInput.click();
@@ -228,30 +195,24 @@ export class RolesAndPermissionsPage {
 
     await expect(
       updatedRow,
-      `permission group "${groupName}" should display saved permissions`,
+      assertionText.rolesPermissions.permissionGroupDisplaysSavedPermissions(groupName),
     ).toContainText(permissionPattern, { timeout: 10000 });
   }
 
   async editPermissionGroupName(currentName: string | RegExp, newName: string) {
     const row = await this.findPermissionGroupRow(currentName);
-    expect(row, `permission group "${currentName}" should exist`).toBeTruthy();
+    expect(row, assertionText.rolesPermissions.permissionGroupExists(currentName)).toBeTruthy();
 
     await this.openRowActionMenu(row!);
 
-    const editOption = this.page
-      .locator('span')
-      .filter({ hasText: /^Edit$/ })
-      .or(this.page.getByText('Edit', { exact: true }))
-      .last();
+    const editOption = rolesPermissionsLocators.editOption(this.page);
 
     await editOption.click();
     await this.pause();
 
-    const nameInput = this.page
-      .getByRole('textbox', { name: /permission group name|enter name/i })
-      .first();
+    const nameInput = rolesPermissionsLocators.permissionGroupEditNameInput(this.page);
 
-    await expect(nameInput, 'name input should appear for editing').toBeVisible({ timeout: 10000 });
+    await expect(nameInput, assertionText.rolesPermissions.nameInputForEditing).toBeVisible({ timeout: 10000 });
     await nameInput.fill(newName);
     await this.pause();
 
@@ -261,30 +222,27 @@ export class RolesAndPermissionsPage {
 
   async deletePermissionGroup(name: string | RegExp) {
     const row = await this.findPermissionGroupRow(name);
-    expect(row, `permission group "${name}" should exist before deletion`).toBeTruthy();
+    expect(row, assertionText.rolesPermissions.permissionGroupExistsBeforeDeletion(name)).toBeTruthy();
 
     await this.openRowActionMenu(row!);
-    await this.page.getByText('Delete', { exact: true }).click();
+    await rolesPermissionsLocators.deleteOption(this.page).click();
     await this.pause();
 
-    const confirmDeleteButton = this.page.getByRole('button', { name: /^delete$/i }).last();
-    await expect(confirmDeleteButton, 'delete confirm button should appear').toBeVisible({ timeout: 5000 });
+    const confirmDeleteButton = rolesPermissionsLocators.confirmDeleteButton(this.page);
+    await expect(confirmDeleteButton, assertionText.rolesPermissions.deleteConfirmButtonAppears).toBeVisible({ timeout: 5000 });
     await confirmDeleteButton.click();
     await this.waitForNetwork();
   }
 
   async togglePermissionGroupStatus(name: string | RegExp) {
     const row = await this.findPermissionGroupRow(name);
-    expect(row, `permission group "${name}" should exist`).toBeTruthy();
+    expect(row, assertionText.rolesPermissions.permissionGroupExists(name)).toBeTruthy();
 
     await this.openRowActionMenu(row!);
 
-    const statusSwitch = this.page
-      .getByRole('switch')
-      .or(this.page.locator('.ant-switch'))
-      .last();
+    const statusSwitch = rolesPermissionsLocators.statusSwitch(this.page);
 
-    await expect(statusSwitch, 'status switch should appear').toBeVisible({ timeout: 10000 });
+    await expect(statusSwitch, assertionText.rolesPermissions.statusSwitchAppears).toBeVisible({ timeout: 10000 });
     await statusSwitch.click();
 
     await this.confirmDialogIfVisible();
@@ -306,45 +264,39 @@ export class RolesAndPermissionsPage {
   async expectRoleInTable(name: string | RegExp) {
     await expect(async () => {
       const row = await this.findRoleRow(name);
-      expect(row, `role "${name}" should appear in the table`).toBeTruthy();
+      expect(row, assertionText.rolesPermissions.roleAppears(name)).toBeTruthy();
     }).toPass({ timeout: 15000 });
   }
 
   async expectPermissionGroupInTable(name: string | RegExp) {
     await expect(async () => {
       const row = await this.findPermissionGroupRow(name);
-      expect(row, `permission group "${name}" should appear in the table`).toBeTruthy();
+      expect(row, assertionText.rolesPermissions.permissionGroupAppears(name)).toBeTruthy();
     }).toPass({ timeout: 15000 });
   }
 
   async expectPermissionGroupNotInTable(name: string | RegExp) {
     await expect(async () => {
       const row = await this.findPermissionGroupRow(name);
-      expect(row, `permission group "${name}" should have been deleted`).toBeNull();
+      expect(row, assertionText.rolesPermissions.permissionGroupDeleted(name)).toBeNull();
     }).toPass({ timeout: 15000 });
   }
 
   async expectSuccessToast() {
     await expect(
-      this.page
-        .locator('.ant-message-success, .ant-notification-notice-success, [class*="success"]')
-        .first(),
+      rolesPermissionsLocators.successToast(this.page),
     ).toBeVisible({ timeout: 10000 });
   }
 
   async expectErrorToast() {
     await expect(
-      this.page
-        .locator('.ant-message-error, .ant-notification-notice-error, [class*="error"]')
-        .first(),
+      rolesPermissionsLocators.errorToast(this.page),
     ).toBeVisible({ timeout: 10000 });
   }
 
   async expectValidationErrors() {
     await expect(
-      this.page
-        .locator('.ant-form-item-explain-error, [role="alert"], .Mui-error')
-        .first(),
+      rolesPermissionsLocators.validationError(this.page),
     ).toBeVisible({ timeout: 10000 });
   }
 
@@ -371,21 +323,16 @@ export class RolesAndPermissionsPage {
   }
 
   private async openRowActionMenu(row: Locator) {
-    const actionButton = row
-      .getByRole('button')
-      .or(row.locator('.anticon-ellipsis').locator('..'))
-      .last();
+    const actionButton = rolesPermissionsLocators.rowActionButton(row);
 
     await actionButton.scrollIntoViewIfNeeded();
-    await expect(actionButton, 'row action button should be visible').toBeVisible({ timeout: 10000 });
+    await expect(actionButton, assertionText.rolesPermissions.rowActionButtonVisible).toBeVisible({ timeout: 10000 });
     await actionButton.click();
     await this.pause();
   }
 
   private async selectDropdownOption(option: string | RegExp, fallbackToFirst = false) {
-    const allOptions = this.page.locator(
-      '.ant-select-item-option:not(.ant-select-item-option-disabled), .ant-dropdown-menu-item',
-    );
+    const allOptions = rolesPermissionsLocators.dropdownOptions(this.page);
     let target = allOptions.filter({ hasText: option }).first();
 
     const isVisible = () => target.isVisible({ timeout: 5000 }).catch(() => false);
@@ -393,36 +340,33 @@ export class RolesAndPermissionsPage {
       target = allOptions.filter({ hasText: /\S/ }).first();
     }
 
-    await expect(target, `option "${option}" should be visible`).toBeVisible({ timeout: 10000 });
+    await expect(target, assertionText.rolesPermissions.optionVisible(option)).toBeVisible({ timeout: 10000 });
     await target.click({ force: true });
     await this.pause();
   }
 
   private async clickNextWhenEnabled(stepName: string) {
-    await expect(this.nextButton, `"${stepName}" Next button should be enabled`).toBeEnabled({ timeout: 15000 });
+    await expect(this.nextButton, assertionText.rolesPermissions.nextButtonEnabled(stepName)).toBeEnabled({ timeout: 15000 });
     await this.nextButton.click();
     await this.waitForNetwork();
     await this.pause();
   }
 
   private async confirmDialogIfVisible() {
-    const confirmButton = this.page.getByRole('button', { name: /confirm|yes|ok/i }).last();
+    const confirmButton = rolesPermissionsLocators.confirmButton(this.page);
     if (await confirmButton.isVisible({ timeout: 3000 }).catch(() => false)) {
       await confirmButton.click();
     }
   }
 
   private async openAddPermissionsPanel(row: Locator) {
-    const inlineButton = row
-      .getByRole('button', { name: /add permissions/i })
-      .or(row.locator('td').filter({ hasText: /add permissions/i }))
-      .first();
+    const inlineButton = rolesPermissionsLocators.inlineAddPermissionsButton(row);
 
     if (await inlineButton.isVisible({ timeout: 3000 }).catch(() => false)) {
       await inlineButton.click();
     } else {
       await this.openRowActionMenu(row);
-      await this.page.getByText(/add permissions/i).first().click();
+      await rolesPermissionsLocators.addPermissionsText(this.page).click();
     }
 
     await this.waitForNetwork();
@@ -431,7 +375,7 @@ export class RolesAndPermissionsPage {
 
   private async checkPermissions(permissions: Permission[]) {
     for (const permission of permissions) {
-      const checkbox = this.page.getByRole('checkbox', { name: permission });
+      const checkbox = rolesPermissionsLocators.permissionCheckbox(this.page, permission);
       if (await checkbox.isVisible({ timeout: 3000 }).catch(() => false)) {
         if (!await checkbox.isChecked()) {
           await checkbox.check();
@@ -443,7 +387,7 @@ export class RolesAndPermissionsPage {
 
     if (await this.nextButton.isEnabled().catch(() => false)) return;
 
-    const allCheckboxes = this.page.getByRole('checkbox');
+    const allCheckboxes = rolesPermissionsLocators.allCheckboxes(this.page);
     const total         = await allCheckboxes.count();
 
     for (let i = 0; i < total; i++) {
@@ -488,7 +432,7 @@ export class RolesAndPermissionsPage {
   }
 
   private async findRow(name: string | RegExp): Promise<Locator | null> {
-    const rows  = this.page.getByRole('row').or(this.page.locator('tbody tr:not(.ant-table-measure-row)'));
+    const rows = rolesPermissionsLocators.rows(this.page);
     const count = await rows.count();
 
     for (let i = 0; i < count; i++) {
@@ -504,7 +448,7 @@ export class RolesAndPermissionsPage {
   }
 
   private async findRoleRowWithActions(name: string | RegExp): Promise<Locator | null> {
-    const rows  = this.page.getByRole('row').or(this.page.locator('tbody tr:not(.ant-table-measure-row)'));
+    const rows = rolesPermissionsLocators.rows(this.page);
     const count = await rows.count();
 
     for (let i = 0; i < count; i++) {
@@ -525,7 +469,7 @@ export class RolesAndPermissionsPage {
 
     await expect(async () => {
       found = await this.findRow(name);
-      expect(found, `row "${name}" should appear in the table`).toBeTruthy();
+      expect(found, assertionText.rolesPermissions.rowAppears(name)).toBeTruthy();
     }).toPass({ timeout: 15000 });
 
     return found!;

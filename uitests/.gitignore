@@ -12,3 +12,4 @@ node_modules/
 ../TEST_RUN_RESULTS.md
 ../LOGIN_FLOW_GUIDE.md
 ../.DS_Store
+.env

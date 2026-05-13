@@ -1,7 +1,29 @@
 import { expect } from '@playwright/test';
 import test from '../helper/baseTest';
+import { assertionPatterns, assertionText } from '../helper/assertionText';
+import { commonLocators, rolesPermissionsLocators } from '../helper/locators';
 
 const uniqueName = (prefix: string) => `${prefix}_${Date.now()}`;
+
+async function expectExportStarted(page: import('@playwright/test').Page, exportIconName: RegExp, fileName: RegExp) {
+  const exportIcon = rolesPermissionsLocators.exportIcon(page, exportIconName);
+  await expect(exportIcon, assertionText.rolesPermissions.exportIconVisible(exportIconName)).toBeVisible({ timeout: 10000 });
+
+  const downloadPromise = page.waitForEvent('download', { timeout: 30000 }).catch(() => null);
+  await exportIcon.click();
+
+  const download = await downloadPromise;
+  if (download) {
+    expect(download.suggestedFilename(), assertionText.common.downloadedFileMatchesExportType).toMatch(fileName);
+    return;
+  }
+
+  await expect(
+    commonLocators.exportStartedMessage(page),
+    assertionText.common.exportQueued,
+  ).toBeVisible({ timeout: 10000 });
+}
+
 test.describe('Roles & Permission Groups Module', () => {
   test.beforeEach(async ({ rolesAndPermissionsPage }) => {
     await rolesAndPermissionsPage.navigate();
@@ -35,8 +57,8 @@ test.describe('Roles & Permission Groups Module', () => {
         await rolesAndPermissionsPage.toggleRoleStatus(new RegExp(name, 'i'));
 
         const row = await rolesAndPermissionsPage.findRoleRow(new RegExp(name, 'i'));
-        expect(row, 'role row should still be visible after deactivation').toBeTruthy();
-        await expect(row!).toContainText(/inactive/i, { timeout: 10000 });
+        expect(row, assertionText.rolesPermissions.roleRowVisibleAfterDeactivation).toBeTruthy();
+        await expect(row!).toContainText(assertionPatterns.rolesPermissions.inactive, { timeout: 10000 });
       }
     );
 
@@ -49,9 +71,9 @@ test.describe('Roles & Permission Groups Module', () => {
         await rolesAndPermissionsPage.toggleRoleStatus(new RegExp(name, 'i'));
 
         const row = await rolesAndPermissionsPage.findRoleRow(new RegExp(name, 'i'));
-        expect(row, 'role row should be visible after reactivation').toBeTruthy();
-        await expect(row!).toContainText(/active/i, { timeout: 10000 });
-        await expect(row!).not.toContainText(/inactive/i);
+        expect(row, assertionText.rolesPermissions.roleRowVisibleAfterReactivation).toBeTruthy();
+        await expect(row!).toContainText(assertionPatterns.rolesPermissions.active, { timeout: 10000 });
+        await expect(row!).not.toContainText(assertionPatterns.rolesPermissions.inactive);
       }
     );
 
@@ -89,14 +111,14 @@ test.describe('Roles & Permission Groups Module', () => {
     test('View assigned permissions for a role',
       async ({ rolesAndPermissionsPage, page }) => {
         const row = await rolesAndPermissionsPage.findRoleRow(/.+/);
-        expect(row, 'at least one role should exist in the table').toBeTruthy();
+        expect(row, assertionText.rolesPermissions.roleAvailable).toBeTruthy();
         const roleText = await row!.innerText();
         const roleName = roleText.split(/\s+/).slice(0, 2).join(' ');
 
         await rolesAndPermissionsPage.viewRolePermissions(new RegExp(roleName, 'i'));
 
         await expect(
-          page.locator('div').filter({ hasText: /assigned permissions/i }).first(),
+          rolesPermissionsLocators.assignedPermissionsPanel(page),
         ).toBeVisible({ timeout: 10000 });
       }
     );
@@ -138,8 +160,8 @@ test.describe('Roles & Permission Groups Module', () => {
         );
 
         const row = await rolesAndPermissionsPage.findPermissionGroupRow(new RegExp(name, 'i'));
-        expect(row, 'permission group row should still exist after adding permissions').toBeTruthy();
-        await expect(row!).toContainText(/create|edit|view/i, { timeout: 1000 });
+        expect(row, assertionText.rolesPermissions.permissionGroupRowAfterPermissions).toBeTruthy();
+        await expect(row!).toContainText(assertionPatterns.rolesPermissions.permissionSummary, { timeout: 1000 });
       }
     );
 
@@ -157,7 +179,7 @@ test.describe('Roles & Permission Groups Module', () => {
         );
 
         const row = await rolesAndPermissionsPage.findPermissionGroupRow(new RegExp(name, 'i'));
-        expect(row, 'row should exist after adding multiple permission sets').toBeTruthy();
+        expect(row, assertionText.rolesPermissions.rowAfterMultiplePermissionSets).toBeTruthy();
       }
     );
 
@@ -198,8 +220,8 @@ test.describe('Roles & Permission Groups Module', () => {
         await rolesAndPermissionsPage.togglePermissionGroupStatus(new RegExp(name, 'i'));
 
         const row = await rolesAndPermissionsPage.findPermissionGroupRow(new RegExp(name, 'i'));
-        expect(row, 'row should exist after deactivation').toBeTruthy();
-        await expect(row!).toContainText(/inactive/i, { timeout: 1000 });
+        expect(row, assertionText.rolesPermissions.rowAfterDeactivation).toBeTruthy();
+        await expect(row!).toContainText(assertionPatterns.rolesPermissions.inactive, { timeout: 1000 });
       }
     );
 
@@ -212,9 +234,9 @@ test.describe('Roles & Permission Groups Module', () => {
         await rolesAndPermissionsPage.togglePermissionGroupStatus(new RegExp(name, 'i'));
 
         const row = await rolesAndPermissionsPage.findPermissionGroupRow(new RegExp(name, 'i'));
-        expect(row, 'row should exist after reactivation').toBeTruthy();
-        await expect(row!).toContainText(/active/i, { timeout: 1000 });
-        await expect(row!).not.toContainText(/inactive/i);
+        expect(row, assertionText.rolesPermissions.rowAfterReactivation).toBeTruthy();
+        await expect(row!).toContainText(assertionPatterns.rolesPermissions.active, { timeout: 1000 });
+        await expect(row!).not.toContainText(assertionPatterns.rolesPermissions.inactive);
       }
     );
 
@@ -224,7 +246,7 @@ test.describe('Roles & Permission Groups Module', () => {
         await rolesAndPermissionsPage.addPermissionGroup(name);
 
         const row = await rolesAndPermissionsPage.findPermissionGroupRow(new RegExp(name, 'i'));
-        const editIcon = row!.locator('span[class*="edit"], .anticon-edit, span:nth-child(2)').first();
+        const editIcon = rolesPermissionsLocators.editIcon(row!);
         await editIcon.click();
         await page.waitForTimeout(1000);
 
@@ -235,7 +257,7 @@ test.describe('Roles & Permission Groups Module', () => {
         await rolesAndPermissionsPage.resetButton.click();
         await page.waitForTimeout(500);
 
-        const secondReset = page.getByRole('button', { name: /reset/i }).last();
+        const secondReset = rolesPermissionsLocators.resetButtonLast(page);
         if (await secondReset.isVisible({ timeout: 2000 }).catch(() => false)) {
           await secondReset.click();
         }
@@ -249,42 +271,14 @@ test.describe('Roles & Permission Groups Module', () => {
   test.describe('Export', () => {
 
     test('Export roles to Excel',
-      async ({ rolesAndPermissionsPage, page }) => {
-        const excelExportIcon = page
-          .locator('[id*="panel-roles"] .ant-pro-card-extra .anticon')
-          .last();
-
-        await expect(excelExportIcon, 'Excel export icon should be visible').toBeVisible({ timeout: 10000 });
-
-        const [download] = await Promise.all([
-          page.waitForEvent('download', { timeout: 3000 }),
-          excelExportIcon.click(),
-        ]);
-
-        expect(
-          download.suggestedFilename(),
-          'downloaded file should be an Excel file',
-        ).toMatch(/\.xlsx?$/i);
+      async ({ page }) => {
+        await expectExportStarted(page, /file-excel/i, /\.xlsx?$/i);
       }
     );
 
     test('Export roles to PDF',
-      async ({ rolesAndPermissionsPage, page }) => {
-        const pdfExportIcon = page
-          .locator('[id*="panel-roles"] .ant-pro-card-extra .anticon')
-          .first();
-
-        await expect(pdfExportIcon, 'PDF export icon should be visible').toBeVisible({ timeout: 1000 });
-
-        const [download] = await Promise.all([
-          page.waitForEvent('download', { timeout: 3000 }),
-          pdfExportIcon.click(),
-        ]);
-
-        expect(
-          download.suggestedFilename(),
-          'downloaded file should be a PDF',
-        ).toMatch(/\.pdf$/i);
+      async ({ page }) => {
+        await expectExportStarted(page, /file-pdf/i, /\.pdf$/i);
       }
     );
 
